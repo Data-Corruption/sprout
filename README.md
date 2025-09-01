@@ -65,7 +65,6 @@ curl -sSfL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts
 ```
 
 With version override:
-
 ```sh
 curl -sSfL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh | bash -s -- v1.0.0
 ```
@@ -78,6 +77,7 @@ PowerShell:
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex "& { $(irm https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.ps1) }"
 ```
 
+With version override:
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex "& { $(irm https://raw.githubusercontent.com/Data-Corruption/sprout/main/install.ps1) } -Version v1.0.0"
 ```
