@@ -1,0 +1,30 @@
+name: Build / Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # fetch all history for accurate versioning
+    - uses: actions/setup-go@v4
+      with:
+        go-version-file: 'go.mod'
+    - name: Build # if new and unused entry is in CHANGELOG.md, sets DRAFT_RELEASE=true, VERSION, and writes the release body to a file
+      run: chmod +x scripts/build.sh && ./scripts/build.sh
+    - name: Draft Release
+      if: env.DRAFT_RELEASE == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: true
+        tag_name: ${{ env.VERSION }}
+        name: ${{ env.VERSION }}
+        body_path: ./bin/release_body.md
+        fail_on_unmatched_files: true
+        files: './bin/*.gz'
