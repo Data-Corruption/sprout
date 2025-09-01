@@ -1,4 +1,4 @@
-# Transparent WSL app installation script for Windows (non-admin)
+﻿# Transparent WSL app installation script for Windows (non-admin)
 # Usage: powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 [-Version v1.2.3]
 
 [CmdletBinding()]
@@ -17,13 +17,13 @@ $Service = $true
 
 $ErrorActionPreference = "Stop"
 
-function Fail([string]$msg) { throw "🔴 $msg" }
+function Fail([string]$msg, [int]$code = 1) { $host.UI.WriteErrorLine("🔴 $msg"); [Environment]::Exit($code) }
 function Info($msg) { Write-Host $msg }
 
 # ensure WSL is installed and a default distro exists
-try { $null = & wsl.exe --status 2>&1 } catch { Fail "WSL not installed/enabled. Enable WSL and install a distro, then re-run." }
+try { $null = & wsl.exe --status 2>&1 } catch { Fail "WSL not installed/enabled. Enable WSL and install a distro, then re-run." 1 }
 # ensure it's running
-try { $null = & wsl.exe -e true } catch { Fail "Failed to start WSL. Open a WSL shell once, then re-run." }
+try { $null = & wsl.exe -e true } catch { Fail "Failed to start WSL. Open a WSL shell once, then re-run." 1 }
 
 # if service, ensure systemd is enabled
 if ($Service) {
@@ -37,7 +37,7 @@ Failed to check systemd status. To enable WSL systemd (user), follow:
 3) Re-open your WSL distro and re-run this installer.
 
 If systemd remains disabled, user services may not work and service installation can fail.
-"@
+"@ 1
   }
 }
 
@@ -50,7 +50,7 @@ $linuxInstallCmd = if ([string]::IsNullOrWhiteSpace($Version)) {
 Info "Running Linux installer inside WSL..."
 & $env:SystemRoot\System32\wsl.exe -e /bin/bash -lc $linuxInstallCmd
 Write-Host "" # spacer
-if ($LASTEXITCODE -ne 0) { Fail "Linux install command failed with exit code $LASTEXITCODE." }
+if ($LASTEXITCODE -ne 0) { Fail "Linux install command failed with exit code $LASTEXITCODE." $LASTEXITCODE }
 
 # create windows shim
 $shimRoot = Join-Path $env:LOCALAPPDATA "Programs"
