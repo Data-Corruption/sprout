@@ -1,4 +1,4 @@
-﻿# Transparent WSL app installation script for Windows (non-admin)
+# Transparent WSL app installation script for Windows (non-admin)
 # Usage: powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 [-Version v1.2.3]
 
 [CmdletBinding()]
@@ -17,7 +17,7 @@ $Service = $true
 
 $ErrorActionPreference = "Stop"
 
-function Fail([string]$msg, [int]$code = 1) { $host.UI.WriteErrorLine("🔴 $msg"); [Environment]::Exit($code) }
+function Fail([string]$msg, [int]$code = 1) { $host.UI.WriteErrorLine("$msg"); [Environment]::Exit($code) }
 function Info($msg) { Write-Host $msg }
 
 # ensure WSL is installed and a default distro exists
