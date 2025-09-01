@@ -96,15 +96,14 @@ sprout -h
 
 ### Why LMDB for config? Lemme tall ya
 
-- Atomic, multiple instances safe.
+- Atomic, safe across multiple instances.
 - Single lightweight dependency.
 - Easy, high performance IPC for go <-> c/cpp.
 - Thin wrapper for extending with DBIs (`go/database/database.go`).
-- Same DB handle can be passed down CLI or HTTP execution paths.
 
 ## License / Contributing
 
-[Apache 2.0](./LICENSE.md). PRs welcome.
+[Apache 2.0](./LICENSE.md) PRs welcome.
 
 <sub>
 <3 xoxo :3 <- that last bit is a cat, his name is sebastian and he is ultra fancy. Like, i'm not kidding, more than you initially imagined while reading that. Pinky up, drinks tea... you have no idea. Crazy.
