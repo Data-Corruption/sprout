@@ -90,5 +90,5 @@ if (-not (PathHas $userPath $shimDir)) {
 }
 
 Write-Host ""
-Write-Host "🟢 Installed Windows shim → $shimPathCmd"
-Write-Host "   Try:  $AppName -v"
+Write-Host "Note! to manage the service you'll need to enter WSL first via 'wsl'"
+Write-Host "Otherwise freely use the app as a native Windows cli application."
