@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.1.1] - 2025-09-01
+
+Fixed
+- Fail now properly prints.
+- Improved install.sh comment.
+
 ## [v0.1.0] - 2025-09-01
 
 Minimal starter for Go CLI apps with an optional webserver daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.

@@ -252,7 +252,7 @@ EOF
   deadline=$(( SECONDS + ${HEALTH_TIMEOUT} ))
   until [[ -f "$HEALTH_PATH" ]]; do
     if (( SECONDS >= deadline )); then
-      echo "🔴 Service failed to create health file within timeout." >&2
+      echo "🔴 Service failed to create health file within timeout. Most common cause is port already in use. Verify it's free using 'lsof -i :PORT' (default port being 8080)" >&2
       exit 1
     fi
     sleep 1

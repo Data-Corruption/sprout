@@ -17,7 +17,7 @@ $Service = $true
 
 $ErrorActionPreference = "Stop"
 
-function Fail($msg) { Write-Error 🔴 $msg; exit 1 }
+function Fail([string]$msg) { throw "🔴 $msg" }
 function Info($msg) { Write-Host $msg }
 
 # ensure WSL is installed and a default distro exists
