@@ -11,6 +11,21 @@ Minimal starter for Go CLI apps with an optional daemon, changelog‑driven GitH
 - Self-update support with daily version checks.
 - Example one-liner install scripts for Linux and Windows (via WSL).
 
+## Platform Support
+
+### Operating System
+
+**Linux** (tested on Debian/Ubuntu, Fedora, and Arch-based distributions)  
+Any distro with `bash`, `curl`, and `systemd` should work but isn’t officially tested.  
+**Windows via WSL** (with the same supported Linux distros).  
+Runit support with behavior parity is planned but not prioritized.  
+
+### Architecture
+
+x86-64 only. No ARM / RISC-V builds yet.  
+Would require updating LMDB cgo bindings and type defs for non-x86_64 ABIs.  
+Totally reasonable, not sure how long it would take.
+
 ## For Developers (Using This Template)
 
 ### Setup After Cloning
