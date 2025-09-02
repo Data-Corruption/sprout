@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.1.2] - 2025-09-01
+
+Fixed
+- Minor service cheat sheet improvement
+- Readme badges / working one liner with version examples.
+
 ## [v0.1.1] - 2025-09-01
 
 Fixed

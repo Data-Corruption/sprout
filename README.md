@@ -1,4 +1,4 @@
-# 🌱 Sprout [![Build / Release](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml/badge.svg)](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml)
+# 🌱 Sprout [![Build / Release](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml/badge.svg)](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml) ![License](https://img.shields.io/github/license/Data-Corruption/sprout)
 
 Minimal starter for Go CLI apps with an optional daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.
 
@@ -81,7 +81,7 @@ curl -sSfL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts
 
 With version override:
 ```sh
-curl -sSfL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh | bash -s -- v1.0.0
+curl -sSfL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh | bash -s -- v0.1.2
 ```
 
 ### Windows (WSL)
@@ -94,7 +94,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex "& { $(irm https://raw.git
 
 With version override:
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; iex "& { $(irm https://raw.githubusercontent.com/Data-Corruption/sprout/main/install.ps1) } -Version v1.0.0"
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex "& { $(irm https://raw.githubusercontent.com/Data-Corruption/sprout/main/install.ps1) } -Version v0.1.2"
 ```
 
 This bridges PowerShell and WSL, adds the binary to PATH, and lets you run the tool directly from PowerShell.

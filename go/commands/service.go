@@ -41,8 +41,9 @@ var Service = &cli.Command{
 		fmt.Printf("    Logs:    journalctl --user -u %s -n 200 --no-pager\n", serviceName)
 		fmt.Printf("    Env:     edit %s then restart the service\n", envFilePath)
 
-		fmt.Printf("\nIf you've manually edited the unit file, you'll need to reload the systemd manager configuration:\n")
-		fmt.Printf("    systemctl --user daemon-reload\n")
+		fmt.Println("\nIf you've manually edited the unit file, you'll need to reload the systemd")
+		fmt.Println("manager configuration 'systemctl --user daemon-reload'. Keep in mind updating")
+		fmt.Println("will overwrite your changes, so keep a backup.")
 
 		return nil
 	},
