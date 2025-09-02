@@ -38,6 +38,8 @@ var Service = &cli.Command{
 		fmt.Printf("    Status:  systemctl --user status %s\n", serviceName)
 		fmt.Printf("    Restart: systemctl --user restart %s\n", serviceName)
 		fmt.Printf("    Reset:   systemctl --user reset-failed %s\n", serviceName)
+		fmt.Printf("    Enable:  systemctl --user enable %s\n", serviceName)
+		fmt.Printf("    Disable: systemctl --user disable %s\n", serviceName)
 		fmt.Printf("    Logs:    journalctl --user -u %s -n 200 --no-pager\n", serviceName)
 		fmt.Printf("    Env:     edit %s then restart the service\n", envFilePath)
 
