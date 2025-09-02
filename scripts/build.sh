@@ -34,19 +34,20 @@ if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   description=$(awk '/^## \['"$version"'\]/ {flag=1; next} /^## \[/ {flag=0} flag {print}' CHANGELOG.md)
   echo "$description" > "$RELEASE_BODY_FILE"
 
-  if [[ -z "$version" ]]; then
-    echo "ERROR: Could not determine version from CHANGELOG.md"
-    exit 1
-  fi
-
-  if git rev-parse "$version" >/dev/null 2>&1; then
-    echo "Version $version is already tagged."
+  if [[ -n "$version" ]]; then
+    if git rev-parse "$version" >/dev/null 2>&1; then
+      echo "Version $version is already tagged."
+      echo "DRAFT_RELEASE=false" >> $GITHUB_ENV
+      exit 0
+    else
+      echo "Version $version is not tagged yet."
+      echo "DRAFT_RELEASE=true" >> $GITHUB_ENV
+      echo "VERSION=$version" >> $GITHUB_ENV
+    fi
+  else
+    echo "No version found in CHANGELOG.md"
     echo "DRAFT_RELEASE=false" >> $GITHUB_ENV
     exit 0
-  else
-    echo "Version $version is not tagged yet."
-    echo "DRAFT_RELEASE=true" >> $GITHUB_ENV
-    echo "VERSION=$version" >> $GITHUB_ENV
   fi
 fi
 

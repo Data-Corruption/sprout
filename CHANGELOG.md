@@ -1,20 +1,20 @@
 # Changelog
 
-<!-- example releases below. (without the x prefix on headers) -->
+<!-- example releases below. (without commenting the headers) -->
 
-x## [v0.1.2] - 2025-09-01
+<!-- ## [v0.1.2] - 2025-09-01 -->
 
 Fixed
 - Minor service cheat sheet improvement
 - Readme badges / working one liner with version examples.
 
-x## [v0.1.1] - 2025-09-01
+<!-- ## [v0.1.1] - 2025-09-01 -->
 
 Fixed
 - Fail now properly prints.
 - Improved install.sh comment.
 
-x## [v0.1.0] - 2025-09-01
+<!-- ## [v0.1.0] - 2025-09-01 -->
 
 Minimal starter for Go CLI apps with an optional webserver daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.
 
