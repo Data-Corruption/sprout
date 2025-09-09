@@ -227,8 +227,8 @@ if [ "$SERVICE" = "true" ]; then
 fi
 
 # Success! --------------------------------------------------------------------
-printfSuccess "\nInstalled: $APP_NAME ($effective_version) → $APP_BIN\n"
-printfSuccess "    Run:       '%s -v' to verify (you may need to open a new terminal)\n" "$APP_NAME"
+printfSuccess "Installed: $APP_NAME ($effective_version) → $APP_BIN"
+printfSuccess "    Run:       '$APP_NAME -v' to verify (you may need to open a new terminal)"
 if [ "$SERVICE" = "true" ]; then
-    printfSuccess "    Run:       '%s service' for service management cheat sheet\n" "$APP_NAME"
+  printfSuccess "    Run:       '$APP_NAME service' for service management cheat sheet"
 fi
