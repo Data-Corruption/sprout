@@ -1,31 +1,7 @@
 # Changelog
 
-<!-- example releases below. (without commenting the headers) -->
-
-## [v0.2.1] - 2025-09-09
-
-Couple fixes before test
-
-## [v0.2.0] - 2025-09-09
-
-Changed
-- Now uses systemd notify system instead of health file.
-- Rewrote install.sh for POSIX compatibility.
-
-Added
-- The install script now verifies SHA256 checksums, guarding against corrupted downloads.
-
-<!-- ## [v0.1.2] - 2025-09-01 -->
-
-Fixed
-- Minor service cheat sheet improvement
-- Readme badges / working one liner with version examples.
-
-<!-- ## [v0.1.1] - 2025-09-01 -->
-
-Fixed
-- Fail now properly prints.
-- Improved install.sh comment.
+example release below. (without commenting the headers)
+IMPORTANT - Remove example before you add any real releases!
 
 <!-- ## [v0.1.0] - 2025-09-01 -->
 
@@ -38,7 +14,7 @@ Added
 - Structured, rotatable logging via stdx/xlog under the per-user data path.
 - Changelog-driven release automation; daily lightweight version checks and an update command with opt-in notifications.
 - Cross-platform installers:
-  - Linux bash installer with optional version pinning.
+  - Linux installer with optional version pinning.
   - Windows PowerShell (WSL) installer that bridges PATH and service management.
 - Build scripts for reproducible, versioned artifacts.
 - Apache-2.0 license and template documentation.
