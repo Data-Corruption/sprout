@@ -43,12 +43,12 @@ If systemd remains disabled, user services may not work and service installation
 
 # run linux install script in WSL
 $linuxInstallCmd = if ([string]::IsNullOrWhiteSpace($Version)) {
-  "curl -sSfL https://raw.githubusercontent.com/$Owner/$Repo/main/scripts/install.sh | bash -s --"
+  "curl -fsSL https://raw.githubusercontent.com/$Owner/$Repo/main/scripts/install.sh | sh"
 } else {
-  "curl -sSfL https://raw.githubusercontent.com/$Owner/$Repo/main/scripts/install.sh | bash -s -- $Version"
+  "curl -fsSL https://raw.githubusercontent.com/$Owner/$Repo/main/scripts/install.sh | sh -s -- $Version"
 }
 Info "Running Linux installer inside WSL..."
-& $env:SystemRoot\System32\wsl.exe -e /bin/bash -lc $linuxInstallCmd
+& $env:SystemRoot\System32\wsl.exe -e /bin/sh -lc $linuxInstallCmd
 Write-Host "" # spacer
 if ($LASTEXITCODE -ne 0) { Fail "Linux install command failed with exit code $LASTEXITCODE." $LASTEXITCODE }
 
@@ -63,7 +63,7 @@ $shimContent = @"
 setlocal
 set "WSL=%SystemRoot%\System32\wsl.exe"
 set "APP=%~n0"
-"%WSL%" -e /bin/bash -l -c "exec %APP% \"$@\"" -- %*
+"%WSL%" -e /bin/sh -lc "exec %APP% \"$@\"" -- %*
 endlocal
 "@
 Set-Content -Path $shimPathCmd -Value $shimContent -Encoding ASCII

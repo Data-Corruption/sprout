@@ -100,8 +100,7 @@ if [ "$SERVICE" = "true" ]; then
     # require systemd >= 246
     systemdVersion=$(systemctl --user --version 2>/dev/null \
         | awk 'NR==1 {print $2}' \
-        | sed -E 's/^([0-9]+).*/\1/')
-
+        | sed 's/^\([0-9][0-9]*\).*/\1/')
     [ -n "$systemdVersion" ] || fatal "systemd --user not available (required for SERVICE=true)"
     [ "$systemdVersion" -ge 246 ] || fatal "systemd ≥ 246 required, found $systemdVersion"
 
@@ -135,8 +134,8 @@ hash_out="$temp_dir/$BIN_ASSET_NAME_SHA256"
 gzip_out=${dwld_out%".gz"}
 
 printf "Downloading $bin_url ...\n"
-curl_opts="--fail --location --progress-bar --show-error --connect-timeout 5 --retry-all-errors --retry 3 --retry-delay 1 --max-time 300 -o"
-curl $curl_opts "$dwld_out" "$bin_url" || fatal "Download of binary failed"
+curl_opts="--fail --location --progress-bar --show-error --connect-timeout 5 --retry-all-errors --retry 3 --retry-delay 1 --max-time 300"
+curl $curl_opts -o "$dwld_out" "$bin_url" || fatal "Download of binary failed"
 
 printf "Downloading checksum file %s ...\n" "$bin_url_sha256"
 curl $curl_opts -o "$hash_out" "$bin_url_sha256" || fatal "Download of checksum file failed"

@@ -2,6 +2,10 @@
 
 <!-- example releases below. (without commenting the headers) -->
 
+## [v0.2.1] - 2025-09-09
+
+Couple fixes before test
+
 ## [v0.2.0] - 2025-09-09
 
 Changed

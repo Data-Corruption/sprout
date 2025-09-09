@@ -107,7 +107,7 @@ func Update(ctx context.Context, detach bool) error {
 	}
 
 	// run the install command
-	pipeline := fmt.Sprintf("curl -sSfL %s | bash -s", InstallScriptURL)
+	pipeline := fmt.Sprintf("curl -sSfL %s | sh", InstallScriptURL)
 	xlog.Debugf(ctx, "Running update command: %s", pipeline)
 	if detach {
 		lastDetach = time.Now()
@@ -121,7 +121,7 @@ func Update(ctx context.Context, detach bool) error {
 		}
 		defer uLogF.Close()
 
-		cmd := exec.Command("bash", "-c", pipeline)
+		cmd := exec.Command("sh", "-c", pipeline)
 		cmd.Stdout, cmd.Stderr = uLogF, uLogF
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 
@@ -132,7 +132,7 @@ func Update(ctx context.Context, detach bool) error {
 		iCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 		defer cancel()
 
-		cmd := exec.CommandContext(iCtx, "bash", "-c", pipeline)
+		cmd := exec.CommandContext(iCtx, "sh", "-c", pipeline)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("update failed: %w", err)
