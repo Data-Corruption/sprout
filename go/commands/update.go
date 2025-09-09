@@ -12,6 +12,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+type AppNameKey struct{}
+
 var Update = &cli.Command{
 	Name:  "update",
 	Usage: "update the application",

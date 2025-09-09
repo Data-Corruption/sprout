@@ -2,6 +2,15 @@
 
 <!-- example releases below. (without commenting the headers) -->
 
+## [v0.2.0] - 2025-09-09
+
+Changed
+- Now uses systemd notify system instead of health file.
+- Rewrote install.sh for POSIX compatibility.
+
+Added
+- The install script now verifies SHA256 checksums, guarding against corrupted downloads.
+
 <!-- ## [v0.1.2] - 2025-09-01 -->
 
 Fixed

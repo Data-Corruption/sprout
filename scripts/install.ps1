@@ -85,10 +85,10 @@ if (-not (PathHas $userPath $shimDir)) {
   if (-not (PathHas $env:PATH $shimDir)) { $env:PATH = "$env:PATH;$shimDir" }
   Write-Host "Added to user PATH: $shimDir"
   Write-Host "Open a new terminal for other shells to pick it up."
-} else {
-  Write-Host "User PATH already contains: $shimDir"
 }
 
-Write-Host ""
-Write-Host "Note! to manage the service you'll need to enter WSL first via 'wsl'"
-Write-Host "Otherwise freely use the app as a native Windows cli application."
+if ($Service) {
+  Write-Host ""
+  Write-Host "Note! to manage the service you'll need to enter WSL first via 'wsl'"
+  Write-Host "Otherwise freely use the app as a native Windows cli application."
+}

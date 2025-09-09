@@ -1,17 +1,10 @@
 #!/bin/bash
 
-# Template variables ----------------------------------------------------------
-
-# Replace with app name.
-APP_NAME="sprout"
-
-# Startup ---------------------------------------------------------------------
-
 set -euo pipefail
 umask 022
 
-# dep check. Thanks to go's cross-compilation, we can skip a platform check and just do this.
-required_bins=(go gcc sed awk gzip) # gcc for cgo
+# quick dep check
+required_bins=(go gcc sed awk sha256sum gzip) # gcc for cgo
 for bin in "${required_bins[@]}"; do
   if ! command -v "$bin" >/dev/null 2>&1; then
     echo "error: '$bin' is required but not installed or not in \$PATH" >&2
@@ -23,10 +16,6 @@ version="vX.X.X" # default / development version
 BIN_DIR=bin
 RELEASE_BODY_FILE="$BIN_DIR/release_body.md"
 
-# clean bin dir
-rm -rf "$BIN_DIR" && mkdir -p "$BIN_DIR"
-echo "🟢 Cleaned bin directory"
-
 # if running in CI, extract latest version and description from CHANGELOG.md, if tag already exists, flag and exit.
 if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   echo "Building for CI..."
@@ -35,24 +24,25 @@ if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   echo "$description" > "$RELEASE_BODY_FILE"
 
   if [[ -n "$version" ]]; then
-    if git rev-parse "$version" >/dev/null 2>&1; then
+    if git rev-parse -q --verify "refs/tags/$version^{tag}" >/dev/null; then
       echo "Version $version is already tagged."
-      echo "DRAFT_RELEASE=false" >> $GITHUB_ENV
+      echo "DRAFT_RELEASE=false" >> "$GITHUB_ENV"
       exit 0
     else
       echo "Version $version is not tagged yet."
-      echo "DRAFT_RELEASE=true" >> $GITHUB_ENV
-      echo "VERSION=$version" >> $GITHUB_ENV
+      echo "DRAFT_RELEASE=true" >> "$GITHUB_ENV"
+      echo "VERSION=$version" >> "$GITHUB_ENV"
     fi
   else
     echo "No version found in CHANGELOG.md"
-    echo "DRAFT_RELEASE=false" >> $GITHUB_ENV
+    echo "DRAFT_RELEASE=false" >> "$GITHUB_ENV"
     exit 0
   fi
 fi
 
-LDFLAGS="-X 'main.Version=$version'"
-GO_MAIN_PATH="./go/main"
+# clean bin dir
+rm -rf "$BIN_DIR" && mkdir -p "$BIN_DIR"
+echo "🟢 Cleaned bin directory"
 
 # place any other pre-build steps here e.g.:
 # - linting
@@ -62,10 +52,22 @@ GO_MAIN_PATH="./go/main"
 # - etc.
 
 # build
-build_command="GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags=\"$LDFLAGS\" -o \"$BIN_DIR/linux-amd64\" \"$GO_MAIN_PATH\""
-eval "$build_command"
-echo "🟢 Built $BIN_DIR/linux-amd64"
+LDFLAGS="-X 'main.Version=$version'"
+build_out="$BIN_DIR/linux-amd64"
+GO_MAIN_PATH="./go/main"
+GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -trimpath -buildvcs=false -ldflags="$LDFLAGS" -o "$build_out" "$GO_MAIN_PATH"
+echo "🟢 Built $build_out"
 
-# gzip
-gzip -c -- "$BIN_DIR/linux-amd64" > "$BIN_DIR/linux-amd64.gz"
-echo "🟢 Gzipped $BIN_DIR/linux-amd64"
+# if in CI, gzip and generate checksum
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  gzip_out="$build_out.gz"
+  gzip -c -n -- "$build_out" > "$gzip_out"
+  echo "🟢 Gzipped $build_out"
+
+  sha_out="$gzip_out.sha256"
+  (
+    cd "$(dirname "$gzip_out")" || exit 1
+    sha256sum "$(basename "$gzip_out")" > "$(basename "$sha_out")"
+  )
+  echo "🟢 Generated checksum $sha_out"
+fi

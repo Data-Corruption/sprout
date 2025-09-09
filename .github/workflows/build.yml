@@ -27,4 +27,6 @@ jobs:
         name: ${{ env.VERSION }}
         body_path: ./bin/release_body.md
         fail_on_unmatched_files: true
-        files: './bin/*.gz'
+        files: |
+          ./bin/*.gz
+          ./bin/*.sha256

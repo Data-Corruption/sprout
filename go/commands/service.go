@@ -14,8 +14,6 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-type AppNameKey struct{}
-
 var Service = &cli.Command{
 	Name:  "service",
 	Usage: "service management commands",

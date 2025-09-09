@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sprout/go/database/config"
-	"sprout/go/database/datapath"
+	"sprout/go/sdnotify"
 
 	"github.com/Data-Corruption/stdx/xhttp"
 	"github.com/Data-Corruption/stdx/xlog"
@@ -54,20 +52,18 @@ func New(ctx context.Context, handler http.Handler) (*xhttp.Server, error) {
 		TLSCertPath: tlsCertPath,
 		Handler:     handler,
 		AfterListen: func() {
-			// write health file
-			dataPath := datapath.FromContext(ctx)
-			if dataPath == "" {
-				xlog.Errorf(ctx, "data path is not set")
-				return
-			}
-			healthFilePath := filepath.Join(dataPath, ".health")
-			xlog.Debugf(ctx, "writing health file: %s", healthFilePath)
-			if err := os.WriteFile(healthFilePath, []byte("ok"), 0644); err != nil {
-				xlog.Errorf(ctx, "failed to write health file: %s", err)
+			// tell systemd we're ready
+			status := fmt.Sprintf("Listening on %s", srv.Addr())
+			if err := sdnotify.Ready(status); err != nil {
+				xlog.Warnf(ctx, "sd_notify READY failed: %v", err)
 			}
 			fmt.Printf("Server is listening on http://localhost%s\n", srv.Addr())
 		},
 		OnShutdown: func() {
+			// tell systemd we’re stopping
+			if err := sdnotify.Stopping("Shutting down"); err != nil {
+				xlog.Debugf(ctx, "sd_notify STOPPING failed: %v", err)
+			}
 			fmt.Println("shutting down, cleaning up resources ...")
 		},
 	})
