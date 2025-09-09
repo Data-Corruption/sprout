@@ -16,6 +16,10 @@ version="vX.X.X" # default / development version
 BIN_DIR=bin
 RELEASE_BODY_FILE="$BIN_DIR/release_body.md"
 
+# clean bin dir
+rm -rf "$BIN_DIR" && mkdir -p "$BIN_DIR"
+echo "🟢 Cleaned bin directory"
+
 # if running in CI, extract latest version and description from CHANGELOG.md, if tag already exists, flag and exit.
 if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   echo "Building for CI..."
@@ -39,10 +43,6 @@ if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
     exit 0
   fi
 fi
-
-# clean bin dir
-rm -rf "$BIN_DIR" && mkdir -p "$BIN_DIR"
-echo "🟢 Cleaned bin directory"
 
 # place any other pre-build steps here e.g.:
 # - linting
