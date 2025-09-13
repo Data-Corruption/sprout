@@ -27,21 +27,23 @@ if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   description=$(awk '/^## \['"$version"'\]/ {flag=1; next} /^## \[/ {flag=0} flag {print}' CHANGELOG.md)
   echo "$description" > "$RELEASE_BODY_FILE"
 
-  if [[ -n "$version" ]]; then
-    if git rev-parse -q --verify "refs/tags/$version^{tag}" >/dev/null; then
-      echo "Version $version is already tagged."
-      echo "DRAFT_RELEASE=false" >> "$GITHUB_ENV"
-      exit 0
-    else
-      echo "Version $version is not tagged yet."
-      echo "DRAFT_RELEASE=true" >> "$GITHUB_ENV"
-      echo "VERSION=$version" >> "$GITHUB_ENV"
-    fi
-  else
+  if [[ -z "$version" ]]; then
     echo "No version found in CHANGELOG.md"
     echo "DRAFT_RELEASE=false" >> "$GITHUB_ENV"
     exit 0
   fi
+
+  # check if tag already exists
+  git fetch --tags
+  if git show-ref --verify --quiet "refs/tags/$version"; then
+    echo "Version $version is already tagged."
+    echo "DRAFT_RELEASE=false" >> "$GITHUB_ENV"
+    exit 0
+  fi
+
+  echo "Version $version is not tagged yet."
+  echo "DRAFT_RELEASE=true" >> "$GITHUB_ENV"
+  echo "VERSION=$version" >> "$GITHUB_ENV"
 fi
 
 # place any other pre-build steps here e.g.:
