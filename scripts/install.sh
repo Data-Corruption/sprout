@@ -45,13 +45,21 @@ service_was_enabled=0
 service_was_active=0
 
 # stdout colors
-[ -z "${NO_COLOR:-}" ] && [ -t 1 ] &&
-  { GREEN='\033[32m'; RST_OUT='\033[0m'; } ||
-  { GREEN=; RST_OUT=; }
+if [ -z "${NO_COLOR:-}" ] && [ -t 1 ]; then
+  GREEN=$(printf '\033[32m')
+  RST_OUT=$(printf '\033[0m')
+else
+  GREEN= ; RST_OUT=
+fi
+
 # stderr colors
-[ -z "${NO_COLOR:-}" ] && [ -t 2 ] &&
-  { YELLOW='\033[33m'; RED='\033[31m'; RST_ERR='\033[0m'; } ||
-  { YELLOW=; RED=; RST_ERR=; }
+if [ -z "${NO_COLOR:-}" ] && [ -t 2 ]; then
+  YELLOW=$(printf '\033[33m')
+  RED=$(printf '\033[31m')
+  RST_ERR=$(printf '\033[0m')
+else
+  YELLOW= ; RED= ; RST_ERR=
+fi
 
 successf() { fmt=$1; shift; printf '%s'"$fmt"'%s\n' "${GREEN:-}" "$@" "${RST_OUT:-}"; }
 warnf()    { fmt=$1; shift; printf '%s'"$fmt"'%s\n' "${YELLOW:-}" "$@" "${RST_ERR:-}" >&2; }
@@ -302,14 +310,14 @@ if [ "$SERVICE" = "true" ]; then
     if [ "$service_exists" -eq 1 ]; then
         if [ "$service_was_enabled" -eq 1 ]; then
             systemctl --user enable "$SERVICE_NAME" || { rc=$?; fatalf 'Failed to re-enable service (rc=%d)' "$rc"; }
+            systemctl --user reset-failed "$SERVICE_NAME" || :
         else
             systemctl --user disable "$SERVICE_NAME" || { rc=$?; fatalf 'Failed to re-disable service (rc=%d)' "$rc"; }
         fi
     else
         systemctl --user enable "$SERVICE_NAME" || { rc=$?; fatalf 'Failed to enable service (rc=%d)' "$rc"; }
+        systemctl --user reset-failed "$SERVICE_NAME" || :
     fi
-
-    systemctl --user reset-failed "$SERVICE_NAME" || :
 
     if [ "$service_exists" -eq 1 ]; then
         if [ "$service_was_active" -eq 1 ]; then
