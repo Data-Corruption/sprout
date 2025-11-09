@@ -4,17 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 	"time"
 
+	"sprout/go/app"
 	"sprout/go/commands"
 	"sprout/go/database"
 	"sprout/go/database/config"
-	"sprout/go/database/datapath"
 	"sprout/go/update"
-	"sprout/go/version"
+	"sprout/go/x"
 
 	"github.com/Data-Corruption/stdx/xlog"
 	"github.com/urfave/cli/v3"
@@ -22,155 +20,208 @@ import (
 
 // Template variables ---------------------------------------------------------
 
-const Name = "sprout" // root command name
+const (
+	name            = "sprout" // root command name, must be filepath safe
+	defaultLogLevel = "warn"
+)
 
 // ----------------------------------------------------------------------------
 
-const DefaultLogLevel = "warn"
-
-var Version string // set by build script
+var (
+	version      string // set by build script
+	cleanUpFuncs []func() error
+	mainContext  context.Context
+)
 
 func main() {
-	exitCode, err := run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+	defer cleanup()
+
+	app := &cli.Command{
+		Name:    name,
+		Version: version,
+		Usage:   "example application",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "log",
+				Aliases: []string{"l"},
+				Value:   defaultLogLevel,
+				Usage:   "override log level (debug|info|warn|error|none)",
+			},
+			&cli.BoolFlag{
+				Name:    "version",
+				Aliases: []string{"v"},
+				Usage:   "print version and exit",
+			},
+			&cli.BoolFlag{
+				Name:    "migrate",
+				Aliases: []string{"m"},
+				Hidden:  true,
+				Usage:   "skip migration guard (for the migrator)",
+			},
+		},
+		Before: startup,
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			xlog.Info(ctx, "Ran with no command")
+			fmt.Printf("%s version %s\n", name, version)
+			fmt.Printf("Use '%s help' to see available commands.\n", name)
+			return nil
+		},
+		Commands: []*cli.Command{
+			commands.Update,
+			commands.Service,
+		},
 	}
-	os.Exit(exitCode)
+
+	mainContext = context.Background()
+	if err := app.Run(mainContext, os.Args); err != nil {
+		fmt.Println(err)
+	}
 }
 
-func run() (int, error) {
-	// base context with interrupt/termination handling
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+func startup(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+	if cmd.Bool("version") {
+		fmt.Printf("%s %s\n", name, version)
+		os.Exit(0)
+	}
 
-	// insert version for update stuff
-	ctx = version.IntoContext(ctx, Version)
-
-	// get data path
-	dataPath, err := datapath.Get(Name)
+	appInfo, err := app.NewAppInfo(name, version)
 	if err != nil {
-		return 1, fmt.Errorf("failed to get data path: %w", err)
+		return ctx, fmt.Errorf("failed to create app info: %w", err)
 	}
-	// create data dir if it doesn't exist
-	if err := os.MkdirAll(dataPath, 0755); err != nil {
-		return 1, fmt.Errorf("failed to create data path: %w", err)
-	}
-	ctx = datapath.IntoContext(ctx, dataPath)
+	ctx = app.IntoContext(ctx, appInfo)
 
-	// get log path
-	logPath := filepath.Join(dataPath, "logs")
-	if err := os.MkdirAll(logPath, 0755); err != nil {
-		return 1, fmt.Errorf("failed to create log path: %w", err)
+	// setup migration guard.
+	if !cmd.Bool("migrate") {
+		cleanup, err := update.Mguard(appInfo.Runtime)
+		if err != nil {
+			return ctx, fmt.Errorf("failed to setup migration guard: %w", err)
+		}
+		cleanUpFuncs = append(cleanUpFuncs, cleanup)
+	} else {
+		fmt.Printf("%s version %s\n", name, version)
 	}
 
-	// init logger
-	log, err := xlog.New(logPath, DefaultLogLevel)
+	// init Logger
+	initLogLevel := x.Ternary(cmd.String("log") == "debug", "debug", "none")
+	log, err := xlog.New(filepath.Join(appInfo.Storage, "logs"), initLogLevel)
 	if err != nil {
-		return 1, fmt.Errorf("failed to initialize logger: %w", err)
+		return ctx, fmt.Errorf("failed to initialize logger: %w", err)
 	}
 	ctx = xlog.IntoContext(ctx, log)
-	defer log.Close()
+	cleanUpFuncs = append(cleanUpFuncs, log.Close)
 
-	// init database
+	xlog.Debugf(ctx, "Starting %s, version: %s, storage path: %s, runtime path: %s",
+		appInfo.Name, appInfo.Version, appInfo.Storage, appInfo.Runtime)
+
+	// init Database
 	db, err := database.New(ctx)
 	if err != nil {
-		return 1, fmt.Errorf("failed to initialize database: %w", err)
+		return ctx, fmt.Errorf("failed to initialize database: %w", err)
 	}
 	ctx = database.IntoContext(ctx, db)
-	defer db.Close()
+	dbClose := func() error { db.Close(); return nil }
+	cleanUpFuncs = append(cleanUpFuncs, dbClose)
 	xlog.Debug(ctx, "Database initialized")
 
-	// init config
+	// init Config
 	ctx, err = config.Init(ctx)
 	if err != nil {
-		return 1, fmt.Errorf("failed to initialize config: %w", err)
+		return ctx, fmt.Errorf("failed to initialize config: %w", err)
 	}
 	xlog.Debug(ctx, "Config initialized")
 
-	// set log level
-	cfgLogLevel, err := config.Get[string](ctx, "logLevel")
+	// calculate BaseURL
+	baseURL, err := getBaseURL(ctx)
 	if err != nil {
-		return 1, fmt.Errorf("failed to get log level from config: %w", err)
+		return ctx, fmt.Errorf("failed to get base URL: %w", err)
 	}
-	if err := log.SetLevel(cfgLogLevel); err != nil {
-		return 1, fmt.Errorf("failed to set log level: %w", err)
+	appInfo.BaseURL = baseURL
+	ctx = app.IntoContext(ctx, appInfo) // overwrite with updated appInfo
+	xlog.Debugf(ctx, "Base URL: %s", appInfo.BaseURL)
+
+	// set log level
+	if initLogLevel != "debug" {
+		cfgLogLevel, err := config.Get[string](ctx, "logLevel")
+		if err != nil {
+			return ctx, fmt.Errorf("failed to get log level from config: %w", err)
+		}
+		if err := log.SetLevel(cfgLogLevel); err != nil {
+			return ctx, fmt.Errorf("failed to set log level: %w", err)
+		}
 	}
 
-	// Update check
+	// update check
 	updateNotify, err := config.Get[bool](ctx, "updateNotify")
 	if err != nil {
-		return 1, fmt.Errorf("failed to get updateNotify from config: %w", err)
+		return ctx, fmt.Errorf("failed to get updateNotify from config: %w", err)
 	}
 	if updateNotify {
 		// get last update check time from config
 		tStr, err := config.Get[string](ctx, "lastUpdateCheck")
 		if err != nil {
-			return 1, fmt.Errorf("failed to get lastUpdateCheck from config: %w", err)
+			return ctx, fmt.Errorf("failed to get lastUpdateCheck from config: %w", err)
 		}
 		t, err := time.Parse(time.RFC3339, tStr)
 		if err != nil {
-			return 1, fmt.Errorf("failed to parse lastUpdateCheck time: %w", err)
+			return ctx, fmt.Errorf("failed to parse lastUpdateCheck time: %w", err)
 		}
-
-		// once a day, very lightweight check
+		// once a day, very lightweight check, to be polite to github
 		if time.Since(t) > 24*time.Hour {
 			xlog.Debug(ctx, "Checking for updates...")
-
 			// update check time in config
 			if err := config.Set(ctx, "lastUpdateCheck", time.Now().Format(time.RFC3339)); err != nil {
-				return 1, fmt.Errorf("failed to set lastUpdateCheck in config: %w", err)
+				return ctx, fmt.Errorf("failed to set lastUpdateCheck in config: %w", err)
 			}
-
 			updateAvailable, err := update.Check(ctx)
 			if err != nil {
-				return 1, fmt.Errorf("failed to check for updates: %w", err)
+				return ctx, fmt.Errorf("failed to check for updates: %w", err)
 			}
 			if updateAvailable {
-				fmt.Printf("Update available! Run '%s update' to update.", Name)
+				fmt.Println("Update available! Run 'halsey update check' to see details.")
 			}
 		}
 	}
 
-	// init app
-	app := &cli.Command{
-		Name:    Name,
-		Version: Version,
-		Usage:   "example CLI application with web capabilities",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "log",
-				Value: DefaultLogLevel,
-				Usage: "override log level (debug|info|warn|error|none)",
-			},
-			&cli.BoolFlag{
-				Name:    "yes",
-				Aliases: []string{"y"},
-				Usage:   "answer yes to all prompts",
-			},
-		},
-		Commands: []*cli.Command{
-			commands.Update,
-			commands.UpdateToggleNotify,
-			commands.Service,
-		},
-		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
-			// insert app name into context
-			ctx = context.WithValue(ctx, commands.AppNameKey{}, Name)
-			// handle log level override
-			logLevel := cmd.String("log")
-			if logLevel != DefaultLogLevel {
-				if err := log.SetLevel(logLevel); err != nil {
-					return ctx, err
-				}
-			}
-			return ctx, nil
-		},
+	// init other components
+
+	return ctx, nil
+}
+
+func cleanup() {
+	// call clean up funcs in reverse order
+	for i := len(cleanUpFuncs) - 1; i >= 0; i-- {
+		if err := cleanUpFuncs[i](); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to clean up: %v\n", err)
+		}
+	}
+	// call update exit func if set
+	if update.ExitFunc != nil {
+		// sleep a bit to allow cleanup to sync to disk
+		time.Sleep(1 * time.Second)
+		if err := update.ExitFunc(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to update: %v\n", err)
+		}
+	}
+}
+
+func getBaseURL(ctx context.Context) (string, error) {
+	port, err := config.Get[int](ctx, "port")
+	if err != nil {
+		return "", fmt.Errorf("failed to get port from config: %w", err)
+	}
+	host, err := config.Get[string](ctx, "host")
+	if err != nil {
+		return "", fmt.Errorf("failed to get host from config: %w", err)
+	}
+	proxyPort, err := config.Get[int](ctx, "proxyPort")
+	if err != nil {
+		return "", fmt.Errorf("failed to get proxyPort from config: %w", err)
 	}
 
-	// run app
-	if err := app.Run(ctx, os.Args); err != nil {
-		log.Error(err)
-		return 1, fmt.Errorf("app run failed: %w", err)
-	}
-	return 0, nil
+	host = x.Ternary(host != "", host, "localhost")
+	port = x.Ternary(proxyPort != 0, proxyPort, port)
+	hidePort := port == 80 || port == 443
+	scheme := x.Ternary(port == 443, "https", "http")
+	baseURL := fmt.Sprintf("%s://%s%s", scheme, host, x.Ternary(hidePort, "", fmt.Sprintf(":%d", port)))
+	return baseURL, nil
 }

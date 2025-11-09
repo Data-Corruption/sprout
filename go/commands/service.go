@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sprout/go/database/datapath"
+	"sprout/go/app"
 	"sprout/go/server"
 	"sprout/go/update"
 
@@ -18,16 +18,18 @@ var Service = &cli.Command{
 	Name:  "service",
 	Usage: "service management commands",
 	Action: func(ctx context.Context, cmd *cli.Command) error {
-		// get service name
-		appName := ctx.Value(AppNameKey{}).(string)
-		if appName == "" {
-			return fmt.Errorf("app name not found")
+		// get app info
+		app, ok := app.FromContext(ctx)
+		if !ok {
+			return fmt.Errorf("failed to get app info from context")
 		}
-		serviceName := appName + ".service"
 
-		// get env file path
-		dataPath := datapath.FromContext(ctx)
-		envFilePath := fmt.Sprintf("%s/%s.env", dataPath, appName)
+		// get service name / env file path
+		if app.Name == "" || app.Storage == "" {
+			return fmt.Errorf("app name or storage path not found")
+		}
+		serviceName := app.Name + ".service"
+		envFilePath := fmt.Sprintf("%s/%s.env", app.Storage, app.Name)
 
 		// print service management commands
 		fmt.Printf("🖧 Service Cheat Sheet\n")
@@ -40,10 +42,6 @@ var Service = &cli.Command{
 		fmt.Printf("    Disable: systemctl --user disable %s\n", serviceName)
 		fmt.Printf("    Logs:    journalctl --user -u %s -n 200 --no-pager\n", serviceName)
 		fmt.Printf("    Env:     edit %s then restart the service\n", envFilePath)
-
-		fmt.Println("\nIf you've manually edited the unit file, you'll need to reload the systemd")
-		fmt.Println("manager configuration 'systemctl --user daemon-reload'. Keep in mind updating")
-		fmt.Println("will overwrite your changes, so keep a backup.")
 
 		return nil
 	},
@@ -70,6 +68,7 @@ var Service = &cli.Command{
 					if err := update.Update(ctx, true); err != nil {
 						xlog.Errorf(ctx, "/update update start failed: %s", err)
 					}
+					srv.Shutdown(nil)
 				})
 
 				// create server

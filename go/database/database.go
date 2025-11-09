@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
-	"sprout/go/database/datapath"
+	"sprout/go/app"
 
 	"github.com/Data-Corruption/lmdb-go/wrap"
 )
@@ -39,11 +39,14 @@ func FromContext(ctx context.Context) *wrap.DB {
 }
 
 func New(ctx context.Context) (*wrap.DB, error) {
-	path := datapath.FromContext(ctx)
-	if path == "" {
+	appInfo, ok := app.FromContext(ctx)
+	if !ok {
+		return nil, errors.New("app info not found in context")
+	}
+	if appInfo.Storage == "" {
 		return nil, errors.New("nexus data path not set before database initialization")
 	}
-	db, _, err := wrap.New(filepath.Join(path, "db"),
+	db, _, err := wrap.New(filepath.Join(appInfo.Storage, "db"),
 		[]string{ConfigDBIName}, // If you add more DBIs, update this slice as well.
 	)
 	if err != nil {

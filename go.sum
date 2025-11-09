@@ -1,7 +1,5 @@
 github.com/Data-Corruption/lmdb-go v1.2.0 h1:lfa9ialg2Qeqoo+uFcj4AtmgNGBfSrDuc3hkblOsBms=
 github.com/Data-Corruption/lmdb-go v1.2.0/go.mod h1:+SOKGRO4lG1s8YqV8YE7Ryq2LuWBbXECM4AXhKSROpM=
-github.com/Data-Corruption/stdx v0.3.0 h1:z2Faa0gXTs5jNXRyfO/UU9ywfcu8rcqSi0072tCemQ0=
-github.com/Data-Corruption/stdx v0.3.0/go.mod h1:6Pp4IuZ0tzEKvDd35gBusAPFuGCYRY0ZYCeqlu1soNg=
 github.com/Data-Corruption/stdx v0.4.0 h1:rie0r9J2QCt2EaI4so9+e+Oew56gHJFSrourksvywAk=
 github.com/Data-Corruption/stdx v0.4.0/go.mod h1:6Pp4IuZ0tzEKvDd35gBusAPFuGCYRY0ZYCeqlu1soNg=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
