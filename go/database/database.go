@@ -49,9 +49,8 @@ func New(ctx context.Context) (*wrap.DB, error) {
 	db, _, err := wrap.New(filepath.Join(appInfo.Storage, "db"),
 		[]string{ConfigDBIName}, // If you add more DBIs, update this slice as well.
 	)
-	if err != nil {
+	if err != nil && db != nil {
 		db.Close()
-		return nil, err
 	}
-	return db, nil
+	return db, err
 }

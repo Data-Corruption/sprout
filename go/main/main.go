@@ -177,7 +177,7 @@ func startup(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 				return ctx, fmt.Errorf("failed to check for updates: %w", err)
 			}
 			if updateAvailable {
-				fmt.Println("Update available! Run 'halsey update check' to see details.")
+				fmt.Println("Update available! Run 'sprout update' to update to the latest version.")
 			}
 		}
 	}

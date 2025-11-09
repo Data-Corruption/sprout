@@ -121,7 +121,7 @@ uname_m=$(uname -m)
 [ "$(id -u)" -ne 0 ] || fatalf 'Running as root is unsafe. Please run as a non-root user.'
 # Dependencies
 missing=''
-for bin in curl gzip mktemp install sha256sum sed awk; do
+for bin in curl gzip mktemp install sha256sum sed awk flock; do
     command -v "$bin" >/dev/null 2>&1 || missing="${missing}${missing:+ }$bin"
 done
 [ -z "$missing" ] || fatalf 'Missing required tools: %s\nPlease install them and try again.' "$missing"
