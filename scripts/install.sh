@@ -238,7 +238,6 @@ if [ -d "$INSTANCES_DIR" ]; then
             fi
         fi
     done
-    sleep 2
 fi
 
 # acquire exclusive lock
