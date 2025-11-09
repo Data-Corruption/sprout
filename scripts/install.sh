@@ -243,7 +243,7 @@ fi
 
 # acquire exclusive lock
 printf "Acquiring migration lock ...\n"
-lock_fd=99
+lock_fd=9 # arbitrary unused fd, might be an issue in the future if the script is modified to use more fds
 eval "exec $lock_fd>\"\$LOCK_FILE\"" || fatalf 'Failed to open lock file'
 if ! flock -x -w 120 "$lock_fd"; then
     fatalf 'Timeout waiting for exclusive lock. Active instances:\n%s' "$(ls "$INSTANCES_DIR" 2>/dev/null || echo 'none')"
