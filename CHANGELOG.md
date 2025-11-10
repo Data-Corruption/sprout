@@ -3,7 +3,7 @@
 example release below. (without commenting the headers)
 IMPORTANT - Remove example before you add any real releases!
 
-## [v0.3.0] - 2025-11-09 
+<!-- ## [v0.3.0] - 2025-11-09 -->
 
 Minimal starter for Go CLI apps with an optional webserver daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.
 

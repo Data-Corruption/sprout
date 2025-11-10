@@ -5,26 +5,27 @@ Minimal starter for Go CLI apps with an optional daemon, changelog‑driven GitH
 ## Features
 
 - Scaffold for CLI apps using \[[urfave/cli/v3](https://github.com/urfave/cli)].
-- Daemon (webserver default) as a **subcommand** (systemd-managed via installer).
-- CLI instances and daemon share the same atomic data/config directory.
+- Daemon (webserver default) **subcommand** (systemd-managed via installer).
+- CLI instances and daemon share the same atomic database/config (lmdb).
 - Changelog-driven release automation (GitHub Actions).
 - Self-update support with daily version checks.
-- Example one-liner install scripts for Linux and Windows (via WSL).
+- One-liner install scripts for Linux and Windows (via WSL).
 
 ## Platform Support
 
 ### Operating System
 
-**Linux** (tested on Debian/Ubuntu, Fedora, and Arch-based distributions)  
-Any distro with `bash`, `curl`, and `systemd` should work but isn’t officially tested.  
-**Windows via WSL** (with the same supported Linux distros).  
-Runit support with behavior parity is planned but not prioritized.  
+**Linux** Any `systemd` based distro (most of them) should work.  
+**Windows via WSL** (same distro support as native linux).  
+Systemd startup support may need to be enabled via config setting.
+
+> Runit support with behavior parity is planned but very low priority.  
 
 ### Architecture
 
-x86-64 only. No ARM / RISC-V builds yet.  
-Would require updating LMDB cgo bindings and type defs for non-x86_64 ABIs.  
-Totally reasonable, not sure how long it would take.
+x86-64 only.
+
+> ARM / RISC-V is possible but would require updating LMDB cgo bindings and type defs for non-x86_64 ABIs. Seemingly reasonable, not sure how long it would take. Like Runit support this is very low priority.
 
 ## For Developers (Using This Template)
 
@@ -64,8 +65,8 @@ When building locally, version is set to `vX.X.X` and update logic is skipped.
 
 - Daemon is a **subcommand** that runs an HTTP server (default port: `8080`).
 - Installer script sets up a **systemd** service that runs this subcommand.
-- Service and CLI share the same data directory, so commands and daemon interoperate.
-- Installer is idempotent: updating simply reruns it, restarting the service if needed.
+- Service/instances share the same database/logs, so commands and daemon can interop.
+- Installer is idempotent: "updating" = simply rerunning it, restarting the service if needed.
 
 This allows the tool to be both a general-purpose CLI and a running service.
 
