@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sprout/go/app"
-	"sprout/go/database/config"
-	"sprout/go/system/git"
+	"sprout/go/platform/database/config"
+	"sprout/go/platform/git"
 	"sync"
 	"time"
 
@@ -96,27 +96,28 @@ func Update(ctx context.Context, logToFile bool) error {
 	}
 	fmt.Println("New version available:", latest)
 
-	// update config
+	// update config. Treat updates as lazy and not super critical. Fine to set here and
+	// have the update fail and user go a day without it. Just a notification after all.
 	if err := config.Set(ctx, "updateAvailable", false); err != nil {
 		return fmt.Errorf("failed to set updateAvailable in config: %w", err)
 	}
 
-	// run the install command
+	// prepare update command
+	uLogPath := filepath.Join(appInfo.Storage, "update.log")
 	pipeline := fmt.Sprintf("curl -sSfL %s | sh", InstallScriptURL)
-	xlog.Debugf(ctx, "Running update, log to file: %t, command: %s", logToFile, pipeline)
-	var doErr error
+	xlog.Debugf(ctx, "Prepared update, will log to: %t, command: %s", logToFile, pipeline)
+
 	once.Do(func() {
 		ExitFunc = func() error {
-			iCtx, cancel := context.WithTimeout(ctx, UpdateTimeout)
+			iCtx, cancel := context.WithTimeout(context.Background(), UpdateTimeout)
 			defer cancel()
 
 			cmd := exec.CommandContext(iCtx, "sh", "-c", pipeline)
 
 			if logToFile {
-				uLogPath := filepath.Join(appInfo.Storage, "update.log")
 				uLogF, err := os.OpenFile(uLogPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 				if err != nil {
-					doErr = fmt.Errorf("open log: %w", err)
+					return fmt.Errorf("issue opening log: %w", err)
 				}
 				defer uLogF.Close()
 				cmd.Stdout, cmd.Stderr = uLogF, uLogF
@@ -127,5 +128,6 @@ func Update(ctx context.Context, logToFile bool) error {
 			return cmd.Run()
 		}
 	})
-	return doErr
+
+	return nil
 }

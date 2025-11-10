@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"sprout/go/app"
-	"sprout/go/server"
-	"sprout/go/update"
+	"sprout/go/platform/http/server"
+	"sprout/go/platform/update"
 
 	"github.com/Data-Corruption/stdx/xhttp"
 	"github.com/Data-Corruption/stdx/xlog"

@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"sprout/go/app"
-	"sprout/go/commands"
-	"sprout/go/database"
-	"sprout/go/database/config"
-	"sprout/go/update"
-	"sprout/go/x"
+	"sprout/go/app/commands"
+	"sprout/go/platform/database"
+	"sprout/go/platform/database/config"
+	"sprout/go/platform/update"
+	"sprout/go/platform/x"
 
 	"github.com/Data-Corruption/stdx/xlog"
 	"github.com/urfave/cli/v3"

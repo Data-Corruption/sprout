@@ -35,12 +35,13 @@ x86-64 only.
 2. Edit template variables (clearly marked near the top of):
    * `scripts/*`
    * `go/main/main.go`
-   * `go/update/update.go`
+   * `go/platform/update/update.go`
    * `readme.md` (Build / Release badge url)
 3. Build:
    ```sh
    ./scripts/build.sh
    ```
+   > You may need to `chmod +x scripts/build.sh` first.
 4. Test run:
    ```sh
    ./bin/linux-amd64 -h

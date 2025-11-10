@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sprout/go/database/config"
-	"sprout/go/sdnotify"
+	"sprout/go/platform/database/config"
+	"sprout/go/platform/sdnotify"
 
 	"github.com/Data-Corruption/stdx/xhttp"
 	"github.com/Data-Corruption/stdx/xlog"

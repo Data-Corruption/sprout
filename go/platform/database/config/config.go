@@ -27,8 +27,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sprout/go/database"
-	"sprout/go/database/helpers"
+	"sprout/go/platform/database"
+	"sprout/go/platform/database/helpers"
 
 	"github.com/Data-Corruption/lmdb-go/lmdb"
 	"github.com/Data-Corruption/lmdb-go/wrap"

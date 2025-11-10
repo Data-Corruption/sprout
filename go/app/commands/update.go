@@ -5,8 +5,8 @@ package commands
 import (
 	"context"
 	"fmt"
-	"sprout/go/database/config"
-	"sprout/go/update"
+	"sprout/go/platform/database/config"
+	"sprout/go/platform/update"
 
 	"github.com/urfave/cli/v3"
 )
