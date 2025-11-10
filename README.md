@@ -118,6 +118,10 @@ sprout -h
 - Easy, high performance IPC for go <-> c/cpp.
 - Thin wrapper for extending with DBIs (`go/database/database.go`).
 
+### No tests?
+
+Most of the code being related to installing (in a variety of environments) and all of it changing radically and often during development led to me not bothering writing tests. Now that it's in a stable state I do plan on writing some at least for DB migrations. Likely adding support for chaining DB migrations as well, so users can skip versions and developers don't need to impl every possible jump forward. But I've been working on this too long and need a break, I'll circle back to this in a few months.
+
 ## License / Contributing
 
 [Apache 2.0](./LICENSE.md) PRs welcome.
