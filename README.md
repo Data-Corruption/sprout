@@ -1,4 +1,4 @@
-# 🌱 Sprout [![Build / Release](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml/badge.svg)](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml) ![License](https://img.shields.io/github/license/Data-Corruption/sprout)
+# 🌱 Sprout [![Build / Release](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml/badge.svg)](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml) ![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
 
 Minimal starter for Go CLI apps with an optional daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.
 
