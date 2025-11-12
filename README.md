@@ -15,11 +15,14 @@ Minimal starter for Go CLI apps with an optional daemon, changelog‑driven GitH
 
 ### Operating System
 
-**Linux** Any `systemd` based distro (most of them) should work.  
-**Windows via WSL** (same distro support as native linux).  
-Systemd startup support may need to be enabled via config setting.
+#### Linux
 
+Any `systemd` based distro (most of them) should work.  
 > Runit support with behavior parity is planned but very low priority.  
+
+#### Windows via WSL 
+
+(same distro support as native linux). Systemd startup support may need to be enabled via config setting.
 
 ### Architecture
 
