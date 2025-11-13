@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"sprout/go/app"
 	"sprout/go/platform/database/config"
 	"sprout/go/platform/git"
@@ -69,59 +68,85 @@ func Check(ctx context.Context) (bool, error) {
 	return updateAvailable, nil
 }
 
-// Update checks for available updates and applies them if necessary.
-// You should exit after calling this function
-func Update(ctx context.Context, logToFile bool) error {
-	appInfo, ok := app.FromContext(ctx)
-	if !ok {
-		return fmt.Errorf("app info not found in context")
-	}
-	if appInfo.Version == "vX.X.X" {
-		fmt.Println("Dev build detected, skipping update.")
-		return nil
-	}
-
-	lCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	latest, err := git.LatestGitHubReleaseTag(lCtx, RepoURL)
-	if err != nil {
-		return err
-	}
-
-	updateAvailable := semver.Compare(latest, appInfo.Version) > 0
-	if !updateAvailable {
-		fmt.Println("No updates available.")
-		return nil
-	}
-	fmt.Println("New version available:", latest)
-
-	// update config. Treat updates as lazy and not super critical. Fine to set here and
-	// have the update fail and user go a day without it. Just a notification after all.
-	if err := config.Set(ctx, "updateAvailable", false); err != nil {
-		return fmt.Errorf("failed to set updateAvailable in config: %w", err)
-	}
-
-	// prepare update command
-	uLogPath := filepath.Join(appInfo.Storage, "update.log")
-	pipeline := fmt.Sprintf("curl -sSfL %s | sh", InstallScriptURL)
-	xlog.Debugf(ctx, "Prepared update, will log to: %t, command: %s", logToFile, pipeline)
+// Update checks for available updates and prepares the update to be run on exit.
+// Exit after calling this function. Calling more than once has no effect.
+func Update(ctx context.Context, detached bool) error {
+	var returnErr error = nil
 
 	once.Do(func() {
+		appInfo, ok := app.FromContext(ctx)
+		if !ok {
+			returnErr = fmt.Errorf("app info not found in context")
+			return
+		}
+		if appInfo.Version == "vX.X.X" {
+			fmt.Println("Dev build detected, skipping update.")
+			return
+		}
+
+		lCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		latest, err := git.LatestGitHubReleaseTag(lCtx, RepoURL)
+		if err != nil {
+			returnErr = err
+			return
+		}
+
+		updateAvailable := semver.Compare(latest, appInfo.Version) > 0
+		if !updateAvailable {
+			fmt.Println("No updates available.")
+			return
+		}
+		fmt.Println("New version available:", latest)
+
+		// update config. Treat updates as lazy and not super critical. Fine to set here and
+		// have the update fail and user go a day without it. Just a notification after all.
+		if err := config.Set(ctx, "updateAvailable", false); err != nil {
+			returnErr = fmt.Errorf("failed to set updateAvailable in config: %w", err)
+			return
+		}
+
+		// prepare update command
+		pipeline := fmt.Sprintf("curl -sSfL %s | sh", InstallScriptURL)
+		xlog.Debugf(ctx, "Prepared update, detached: %t, command: %s", detached, pipeline)
+
 		ExitFunc = func() error {
-			iCtx, cancel := context.WithTimeout(context.Background(), UpdateTimeout)
-			defer cancel()
+			var cmd *exec.Cmd
 
-			cmd := exec.CommandContext(iCtx, "sh", "-c", pipeline)
+			if detached {
+				// run as transient systemd service, like a service but one-off and configured via cmdline args.
+				// we need this to survive the parent process (service) exiting, which will kill the c group,
+				// including any child processes. Even those started using `cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}`.
 
-			if logToFile {
-				uLogF, err := os.OpenFile(uLogPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
-				if err != nil {
-					return fmt.Errorf("issue opening log: %w", err)
-				}
-				defer uLogF.Close()
-				cmd.Stdout, cmd.Stderr = uLogF, uLogF
+				launchCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cancel()
+
+				unitName := fmt.Sprintf("%s-update-%s", appInfo.Name, time.Now().Format("20060102-150405"))
+				runtime := fmt.Sprintf("RuntimeMaxSec=%ds", int(UpdateTimeout.Seconds()))
+				syslogIdent := fmt.Sprintf("SyslogIdentifier=%s-update", appInfo.Name)
+
+				cmd = exec.CommandContext(
+					launchCtx,
+					"systemd-run",
+					"--user",
+					"--unit="+unitName,
+					"--quiet",
+					"-p", "StandardOutput=journal",
+					"-p", "StandardError=journal",
+					"-p", syslogIdent,
+					"-p", runtime, // apply timeout
+					"-p", "KillSignal=SIGINT",
+					"-p", "TimeoutStopSec=30s", // graceful shutdown time
+					"/bin/sh", "-c", pipeline,
+				)
+				// how to check logs (last 100 lines of updates):
+				// `journalctl --user -u APPNAME-update* -n 100 -f` - add to docs or service cheat sheet?
 			} else {
+				runCtx, cancel := context.WithTimeout(context.Background(), UpdateTimeout)
+				defer cancel()
+
+				cmd = exec.CommandContext(runCtx, "sh", "-c", pipeline)
 				cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 			}
 
@@ -129,5 +154,5 @@ func Update(ctx context.Context, logToFile bool) error {
 		}
 	})
 
-	return nil
+	return returnErr
 }

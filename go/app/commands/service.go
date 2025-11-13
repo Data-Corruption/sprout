@@ -32,16 +32,17 @@ var Service = &cli.Command{
 		envFilePath := fmt.Sprintf("%s/%s.env", app.Storage, app.Name)
 
 		// print service management commands
-		fmt.Printf("🖧 Service Cheat Sheet\n")
+		fmt.Printf("🖧 Service Cheat Sheet\n\n")
+		fmt.Printf("    Status:  systemctl --user status %s\n", serviceName)
+		fmt.Printf("    Enable:  systemctl --user enable %s\n", serviceName)
+		fmt.Printf("    Disable: systemctl --user disable %s\n\n", serviceName)
 		fmt.Printf("    Start:   systemctl --user start %s\n", serviceName)
 		fmt.Printf("    Stop:    systemctl --user stop %s\n", serviceName)
-		fmt.Printf("    Status:  systemctl --user status %s\n", serviceName)
-		fmt.Printf("    Restart: systemctl --user restart %s\n", serviceName)
-		fmt.Printf("    Reset:   systemctl --user reset-failed %s\n", serviceName)
-		fmt.Printf("    Enable:  systemctl --user enable %s\n", serviceName)
-		fmt.Printf("    Disable: systemctl --user disable %s\n", serviceName)
-		fmt.Printf("    Logs:    journalctl --user -u %s -n 200 --no-pager\n", serviceName)
-		fmt.Printf("    Env:     edit %s then restart the service\n", envFilePath)
+		fmt.Printf("    Restart: systemctl --user restart %s\n\n", serviceName)
+		fmt.Printf("    Reset:   systemctl --user reset-failed %s\n\n", serviceName)
+		fmt.Printf("    Env:     edit %s then restart the service\n\n", envFilePath)
+		fmt.Printf("    Logs:        journalctl --user -u %s -n 200 --no-pager\n", serviceName)
+		fmt.Printf("    Update Logs: journalctl --user -u %s-update* -n 200 -f\n", app.Name)
 
 		return nil
 	},
