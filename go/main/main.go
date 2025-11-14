@@ -174,7 +174,7 @@ func startup(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			}
 			updateAvailable, err := update.Check(ctx)
 			if err != nil {
-				return ctx, fmt.Errorf("failed to check for updates: %w", err)
+				xlog.Errorf(ctx, "Update check failed: %v", err) // just log since might not be online
 			}
 			if updateAvailable {
 				fmt.Println("Update available! Run 'sprout update' to update to the latest version.")
