@@ -16,6 +16,8 @@ type RegFunc func(a *app.App) *cli.Command
 var Registry []RegFunc
 
 func register(rf RegFunc) RegFunc {
-	Registry = append(Registry, rf)
+	if rf != nil {
+		Registry = append(Registry, rf)
+	}
 	return rf
 }

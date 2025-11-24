@@ -11,19 +11,25 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// Template variables ---------------------------------------------------------
+const defaultLogLevel = "warn"
 
-const (
-	name            = "sprout" // root command name, must be filepath safe
-	defaultLogLevel = "warn"
+// set by build script
+var (
+	name             string
+	version          string
+	repoURL          string
+	installScriptURL string
+	serviceEnabled   string
 )
 
-// ----------------------------------------------------------------------------
-
-var version string // set by build script
-
 func main() {
-	app := &app.App{}
+	app := &app.App{
+		Name:             name,
+		Version:          version,
+		RepoURL:          repoURL,
+		InstallScriptURL: installScriptURL,
+		ServiceEnabled:   serviceEnabled == "true",
+	}
 	defer app.Close()
 
 	var subCommands []*cli.Command
@@ -53,9 +59,19 @@ func main() {
 				Hidden:  true,
 				Usage:   "skip migration guard (for the migrator)",
 			},
+			&cli.BoolFlag{
+				Name:   "build-vars",
+				Hidden: true,
+				Usage:  "print build variables and exit",
+			},
 		},
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
-			return app.Init(ctx, cmd, name, version)
+			if cmd.Bool("build-vars") {
+				fmt.Printf(`{"name":"%s","version":"%s","repoURL":"%s","installScriptURL":"%s","serviceEnabled":"%s"}`+"\n",
+					name, version, repoURL, installScriptURL, serviceEnabled)
+				os.Exit(0)
+			}
+			return app.Init(ctx, cmd)
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			app.Log.Info("Ran with no arguments.")

@@ -18,6 +18,10 @@ Added
   - Windows PowerShell (WSL) installer.
 - Build scripts for reproducible, versioned artifacts.
 - Apache-2.0 license and template documentation.
+- Refactored project structure to standard Go layout (`cmd`, `internal`, `pkg`).
+
+Changed
+- Configuration variables are now injected via build script (LDFLAGS) instead of requiring manual Go file edits.
 
 Notes
 - Local builds use a placeholder version (vX.X.X) and skips update logic.

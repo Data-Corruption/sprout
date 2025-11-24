@@ -3,14 +3,12 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
 	"sprout/internal/platform/database"
 	"sprout/pkg/x"
-	"strings"
 	"sync"
 	"time"
 
@@ -21,14 +19,17 @@ import (
 )
 
 type App struct {
-	Name    string
-	Version string
-	DB      *wrap.DB
-	Log     *xlog.Logger
-	Net     struct {
-		BaseURL   string // e.g., "https://example.com/"
-		UserAgent string // User-Agent string for network requests
-		Server    *xhttp.Server
+	Name             string
+	Version          string
+	RepoURL          string
+	InstallScriptURL string
+	ServiceEnabled   bool
+
+	DB  *wrap.DB
+	Log *xlog.Logger
+	Net struct {
+		BaseURL string // e.g., "https://example.com/"
+		Server  *xhttp.Server
 	}
 	Paths struct {
 		Storage string // (e.g., ~/.appName)
@@ -41,18 +42,7 @@ type App struct {
 	Context     context.Context
 }
 
-func (a *App) Init(ctx context.Context, cmd *cli.Command, name, version string) (context.Context, error) {
-	a.Name = name
-	a.Version = version
-
-	// for a proper User-Agent string include the app name, version, and a way
-	// to contact the developer and or get info about the app.
-	// e.g., "Mozilla/5.0 (compatible; Sprout/1.0; +https://sprout.net)"
-	a.Net.UserAgent = fmt.Sprintf(
-		"Mozilla/5.0 (%s/%s)",
-		a.Name,
-		strings.TrimPrefix(version, "v"),
-	)
+func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 
 	// paths
 	var err error
@@ -69,7 +59,7 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command, name, version string) 
 			return ctx, fmt.Errorf("failed to setup migration guard: %w", err)
 		}
 	} else {
-		fmt.Printf("%s version %s\n", name, version)
+		fmt.Printf("%s version %s\n", a.Name, a.Version)
 	}
 
 	// logger
@@ -153,17 +143,8 @@ func (a *App) Close() {
 
 // getStoragePath calculates the storage path for the application (~/.appName).
 func getStoragePath(appName string) (string, error) {
-	// non-root: use current user's home.
-	if os.Geteuid() != 0 {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("cannot determine home dir: %w", err)
-		}
-		return filepath.Join(home, "."+appName), nil
-	}
-
-	// root: require an invoking non-root user (sudo/doas).
-	home, err := invokingUserHome()
+	// get home dir
+	home, err := x.GetUserHomeDir()
 	if err != nil {
 		return "", err
 	}
@@ -190,46 +171,6 @@ func getRuntimePath(appName string) (string, error) {
 	}
 
 	return filepath.Join("/tmp", appName+"-"+username), nil
-}
-
-func invokingUserHome() (string, error) {
-	// prefer UID (avoids name ambiguities).
-	if uid := firstNonEmpty(os.Getenv("SUDO_UID"), os.Getenv("DOAS_UID")); uid != "" && uid != "0" {
-		u, err := user.LookupId(uid)
-		if err != nil {
-			return "", fmt.Errorf("cannot lookup uid %s: %w", uid, err)
-		}
-		if u.HomeDir == "" {
-			return "", fmt.Errorf("empty home for uid %s", uid)
-		}
-		return u.HomeDir, nil
-	}
-
-	// fallback to username if UID not present.
-	if uname := firstNonEmpty(os.Getenv("SUDO_USER"), os.Getenv("DOAS_USER")); uname != "" {
-		u, err := user.Lookup(uname)
-		if err != nil {
-			return "", fmt.Errorf("cannot lookup user %q: %w", uname, err)
-		}
-		if u.Uid == "0" {
-			return "", errors.New("invoking user resolves to root; aborting")
-		}
-		if u.HomeDir == "" {
-			return "", fmt.Errorf("empty home for user %q", uname)
-		}
-		return u.HomeDir, nil
-	}
-
-	return "", errors.New("refusing to run as real root: no SUDO_*/DOAS_* env present")
-}
-
-func firstNonEmpty(ss ...string) string {
-	for _, s := range ss {
-		if s != "" {
-			return s
-		}
-	}
-	return ""
 }
 
 func getBaseURL(cfg *database.Configuration) (string, error) {

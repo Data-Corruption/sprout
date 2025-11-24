@@ -13,6 +13,9 @@ import (
 )
 
 var Service = register(func(a *app.App) *cli.Command {
+	if !a.ServiceEnabled {
+		return nil
+	}
 	return &cli.Command{
 		Name:  "service",
 		Usage: "service management commands",

@@ -1,0 +1,4 @@
+{
+    "go.inlayHints.constantValues": true,
+    "go.inlayHints.ignoredError": true,
+}

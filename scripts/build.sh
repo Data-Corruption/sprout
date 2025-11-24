@@ -4,6 +4,11 @@
 
 APP_NAME="sprout"
 
+REPO_URL="https://github.com/Data-Corruption/sprout.git"
+INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh"
+
+SERVICE="true"
+
 # Script ----------------------------------------------------------------------
 
 set -euo pipefail
@@ -60,11 +65,33 @@ fi
 # - etc.
 
 # build
-LDFLAGS="-X 'main.version=$version'"
+LDFLAGS="-X 'main.version=$version' -X 'main.name=$APP_NAME' -X 'main.repoURL=$REPO_URL' -X 'main.installScriptURL=$INSTALL_SCRIPT_URL' -X 'main.serviceEnabled=$SERVICE'"
 build_out="$BIN_DIR/linux-amd64"
 GO_MAIN_PATH="./cmd/$APP_NAME"
 GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -trimpath -buildvcs=false -ldflags="$LDFLAGS" -o "$build_out" "$GO_MAIN_PATH"
 echo "🟢 Built $build_out"
+
+# verify build vars (you can edit the build step with more confidence)
+vars=$("$build_out" --build-vars)
+
+check_var() {
+  local key="$1"
+  local expected="$2"
+  local actual
+  actual=$(echo "$vars" | grep -o "\"$key\":\"[^\"]*\"" | cut -d'"' -f4)
+  if [[ "$actual" != "$expected" ]]; then
+    echo "❌ Error: $key mismatch. Expected '$expected', got '$actual'"
+    exit 1
+  fi
+}
+
+check_var "name" "$APP_NAME"
+check_var "version" "$version"
+check_var "repoURL" "$REPO_URL"
+check_var "installScriptURL" "$INSTALL_SCRIPT_URL"
+check_var "serviceEnabled" "$SERVICE"
+
+echo "🟢 Build variables verified"
 
 # if in CI, gzip and generate checksum
 if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then

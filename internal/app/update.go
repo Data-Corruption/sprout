@@ -7,22 +7,15 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sprout/internal/platform/database"
 	"sprout/internal/platform/git"
 	"sync"
+	"syscall"
 	"time"
 
 	"golang.org/x/mod/semver"
 )
-
-// Template variables ---------------------------------------------------------
-
-const (
-	RepoURL          = "https://github.com/Data-Corruption/sprout.git"
-	InstallScriptURL = "https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh"
-)
-
-// ----------------------------------------------------------------------------
 
 const UpdateTimeout = 10 * time.Minute // max time for update process
 
@@ -73,7 +66,7 @@ func (a *App) UpdateCheck() (bool, error) {
 	lCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	latest, err := git.LatestGitHubReleaseTag(lCtx, RepoURL)
+	latest, err := git.LatestGitHubReleaseTag(lCtx, a.RepoURL)
 	if err != nil {
 		return false, err
 	}
@@ -112,7 +105,7 @@ func (a *App) Update(detached bool) error {
 		lCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		latest, err := git.LatestGitHubReleaseTag(lCtx, RepoURL)
+		latest, err := git.LatestGitHubReleaseTag(lCtx, a.RepoURL)
 		if err != nil {
 			returnErr = err
 			return
@@ -136,49 +129,73 @@ func (a *App) Update(detached bool) error {
 
 		// prepare update command
 		name := a.Name
-		pipeline := fmt.Sprintf("curl -sSfL %s | sh", InstallScriptURL)
-		a.Log.Debugf("Prepared update, detached: %t, command: %s", detached, pipeline)
+		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.InstallScriptURL)
+		logPath := filepath.Join(a.Paths.Storage, "update.log")
+		a.Log.Debugf("Prepared update, detached: %t, command: %s, logPath: %s", detached, pipeline, logPath)
 
 		a.SetPostCleanup(func() error {
-			var cmd *exec.Cmd
-
-			if detached {
-				// run as transient systemd service, like a service but one-off and configured via cmdline args.
-				// we need this to survive the parent process (service) exiting, which will kill the c group,
-				// including any child processes. Even those started using `cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}`.
-
-				launchCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-				defer cancel()
-
-				unitName := fmt.Sprintf("%s-update-%s", name, time.Now().Format("20060102-150405"))
-				runtime := fmt.Sprintf("RuntimeMaxSec=%ds", int(UpdateTimeout.Seconds()))
-				syslogIdent := fmt.Sprintf("SyslogIdentifier=%s-update", name)
-
-				cmd = exec.CommandContext(
-					launchCtx,
-					"systemd-run",
-					"--user",
-					"--unit="+unitName,
-					"--quiet",
-					"-p", "StandardOutput=journal",
-					"-p", "StandardError=journal",
-					"-p", syslogIdent,
-					"-p", runtime, // apply timeout
-					"-p", "KillSignal=SIGINT",
-					"-p", "TimeoutStopSec=30s", // graceful shutdown time
-					"/bin/sh", "-c", pipeline,
-				)
-			} else {
-				runCtx, cancel := context.WithTimeout(context.Background(), UpdateTimeout)
-				defer cancel()
-
-				cmd = exec.CommandContext(runCtx, "sh", "-c", pipeline)
-				cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-			}
-
-			return cmd.Run()
+			return runUpdate(detached, a.ServiceEnabled, name, pipeline, logPath)
 		})
 	})
 
 	return returnErr
+}
+
+func runUpdate(detached, serviceEnabled bool, name, pipeline, logPath string) error {
+	var cmd *exec.Cmd
+
+	if detached {
+		if serviceEnabled {
+			// Run as transient systemd service (like a service but one-off and
+			// configured via cmdline args). Assuming this is run from in the daemon,
+			// we need this to survive the parent process (service) exiting, which
+			// will kill the c group, including any child processes. Even those started
+			// using `cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}`. The service
+			// needs to exit because the install script updates the unit file, etc.
+
+			launchCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+
+			unitName := fmt.Sprintf("%s-update-%s", name, time.Now().Format("20060102-150405"))
+			runtime := fmt.Sprintf("RuntimeMaxSec=%ds", int(UpdateTimeout.Seconds()))
+			syslogIdent := fmt.Sprintf("SyslogIdentifier=%s-update", name)
+
+			cmd = exec.CommandContext(
+				launchCtx,
+				"systemd-run",
+				"--user",
+				"--unit="+unitName,
+				"--quiet",
+				"-p", "StandardOutput=journal",
+				"-p", "StandardError=journal",
+				"-p", syslogIdent,
+				"-p", runtime, // apply timeout
+				"-p", "KillSignal=SIGINT",
+				"-p", "TimeoutStopSec=30s", // graceful shutdown time
+				"/bin/sh", "-c", pipeline,
+			)
+		} else {
+			// Not under threat of c group being killed, so just use setsid
+			// with shell-managed logging. escape logPath to be safe.
+			pipelineWithLogging := fmt.Sprintf("( %s ) >> %q 2>&1", pipeline, logPath)
+			cmd := exec.Command("sh", "-c", pipelineWithLogging)
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+			if err := cmd.Start(); err != nil {
+				return fmt.Errorf("failed to start detached update: %w", err)
+			}
+			// release resources so the parent doesn't track the child (prevents zombies)
+			if err := cmd.Process.Release(); err != nil {
+				return fmt.Errorf("failed to release process: %w", err)
+			}
+			return nil
+		}
+	} else {
+		runCtx, cancel := context.WithTimeout(context.Background(), UpdateTimeout)
+		defer cancel()
+
+		cmd = exec.CommandContext(runCtx, "sh", "-c", pipeline)
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	}
+
+	return cmd.Run()
 }
