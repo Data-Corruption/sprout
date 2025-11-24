@@ -81,12 +81,12 @@ These are example installation commands for the kind of app you can build with t
 ### Linux
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh | sh
 ```
 
 With version override:
 ```sh
-curl -sSfL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh | sh -s -- v0.1.2
+curl -fsSL https://raw.githubusercontent.com/Data-Corruption/sprout/main/scripts/install.sh | sh -s -- v0.1.2
 ```
 
 ### Windows (WSL)

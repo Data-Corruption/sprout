@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Template variables ----------------------------------------------------------
+
+APP_NAME="sprout"
+
+# Script ----------------------------------------------------------------------
+
 set -euo pipefail
 umask 022
 
@@ -56,7 +62,7 @@ fi
 # build
 LDFLAGS="-X 'main.version=$version'"
 build_out="$BIN_DIR/linux-amd64"
-GO_MAIN_PATH="./go/main"
+GO_MAIN_PATH="./cmd/$APP_NAME"
 GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -trimpath -buildvcs=false -ldflags="$LDFLAGS" -o "$build_out" "$GO_MAIN_PATH"
 echo "🟢 Built $build_out"
 

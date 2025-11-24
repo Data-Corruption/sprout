@@ -15,8 +15,18 @@ REPO_NAME="sprout"
 APP_NAME="sprout"
 
 SERVICE="true"
-SERVICE_DESC="web server daemon for CLI application sprout"
+SERVICE_DESC="powerful discord bot client"
 SERVICE_ARGS="service run"
+
+# print logo, i made this with https://manytools.org/hacker-tools/ascii-banner/
+cat << 'EOF'
+ ______     ______   ______     ______     __  __     ______  
+/\  ___\   /\  == \ /\  == \   /\  __ \   /\ \/\ \   /\__  _\ 
+\ \___  \  \ \  _-/ \ \  __<   \ \ \/\ \  \ \ \_\ \  \/_/\ \/ 
+ \/\_____\  \ \_\    \ \_\ \_\  \ \_____\  \ \_____\    \ \_\ 
+  \/_____/   \/_/     \/_/ /_/   \/_____/   \/_____/     \/_/ 
+                                                              
+EOF
 
 # Constants -------------------------------------------------------------------
 APP_BIN="$HOME/.local/bin/$APP_NAME"
@@ -150,11 +160,6 @@ if [ "$SERVICE" = "true" ]; then
 fi
 
 # Create directories ---------------------------------------------------------
-
-# Optionally print a banner here
-# cat << 'EOF'
-# hi
-# EOF
 
 # print install header
 INSTALL_SYMBOL=''
