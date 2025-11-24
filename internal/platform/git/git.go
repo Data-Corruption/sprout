@@ -36,3 +36,10 @@ func LatestGitHubReleaseTag(ctx context.Context, repoURL string) (string, error)
 	}
 	return "", fmt.Errorf("unexpected Location %q", loc)
 }
+
+// GitHubReleaseSource implements the ReleaseSource interface for GitHub.
+type GitHubReleaseSource struct{}
+
+func (g *GitHubReleaseSource) GetLatest(ctx context.Context, repoURL string) (string, error) {
+	return LatestGitHubReleaseTag(ctx, repoURL)
+}

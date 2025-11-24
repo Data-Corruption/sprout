@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sprout/internal/platform/database"
-	"sprout/internal/platform/git"
 	"sync"
 	"syscall"
 	"time"
@@ -66,7 +65,7 @@ func (a *App) UpdateCheck() (bool, error) {
 	lCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	latest, err := git.LatestGitHubReleaseTag(lCtx, a.RepoURL)
+	latest, err := a.ReleaseSource.GetLatest(lCtx, a.RepoURL)
 	if err != nil {
 		return false, err
 	}
@@ -105,7 +104,7 @@ func (a *App) Update(detached bool) error {
 		lCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		latest, err := git.LatestGitHubReleaseTag(lCtx, a.RepoURL)
+		latest, err := a.ReleaseSource.GetLatest(lCtx, a.RepoURL)
 		if err != nil {
 			returnErr = err
 			return

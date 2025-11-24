@@ -7,6 +7,7 @@ import (
 
 	"sprout/internal/app"
 	"sprout/internal/app/commands"
+	"sprout/internal/platform/git"
 
 	"github.com/urfave/cli/v3"
 )
@@ -29,6 +30,7 @@ func main() {
 		RepoURL:          repoURL,
 		InstallScriptURL: installScriptURL,
 		ServiceEnabled:   serviceEnabled == "true",
+		ReleaseSource:    &git.GitHubReleaseSource{},
 	}
 	defer app.Close()
 

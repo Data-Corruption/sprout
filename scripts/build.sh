@@ -64,6 +64,21 @@ fi
 # - tests
 # - etc.
 
+# run tests
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  test_cmd=(go test -race ./...)
+else
+  test_cmd=(go test ./...)
+fi
+test_output="$("${test_cmd[@]}" 2>&1)" # capture both stdout and stderr
+status=$?
+if (( status != 0 )); then
+  printf '\n🔴 Tests failed:\n'
+  printf '%s\n' "$test_output"
+  exit $status
+fi
+printf '🟢 Tests Passed\n'
+
 # build
 LDFLAGS="-X 'main.version=$version' -X 'main.name=$APP_NAME' -X 'main.repoURL=$REPO_URL' -X 'main.installScriptURL=$INSTALL_SCRIPT_URL' -X 'main.serviceEnabled=$SERVICE'"
 build_out="$BIN_DIR/linux-amd64"
@@ -80,7 +95,7 @@ check_var() {
   local actual
   actual=$(echo "$vars" | grep -o "\"$key\":\"[^\"]*\"" | cut -d'"' -f4)
   if [[ "$actual" != "$expected" ]]; then
-    echo "❌ Error: $key mismatch. Expected '$expected', got '$actual'"
+    echo "🔴 Error: $key mismatch. Expected '$expected', got '$actual'"
     exit 1
   fi
 }

@@ -18,12 +18,19 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+// ReleaseSource defines the interface for checking for updates.
+type ReleaseSource interface {
+	GetLatest(ctx context.Context, repoURL string) (string, error)
+}
+
 type App struct {
 	Name             string
 	Version          string
 	RepoURL          string
 	InstallScriptURL string
 	ServiceEnabled   bool
+
+	ReleaseSource ReleaseSource
 
 	DB  *wrap.DB
 	Log *xlog.Logger
