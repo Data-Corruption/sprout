@@ -1,5 +1,7 @@
 # Changelog
 
+<!-- Replace with your changelog entries. You can start at any version that isn't already tagged.
+
 ## [v0.4.0] - 2025-11-24
 
 Minimal starter for Go CLI apps with an optional webserver daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.
@@ -22,3 +24,5 @@ Added
 Notes
 - Local builds use a placeholder version (vX.X.X) and skips update logic.
 - Project structure using standard Go layout (`cmd`, `internal`, `pkg`).
+
+-->
