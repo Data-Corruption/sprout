@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.3] - 2025-11-24
+
+Check for updates before starting update in /update endpoint.
+
 ## [v0.4.2] - 2025-11-24
 
 Fix test /update endpoint.

@@ -24,6 +24,18 @@ func New(a *app.App) *chi.Mux {
 	})
 
 	r.Get("/update", func(w http.ResponseWriter, r *http.Request) {
+		if updateAvailable, err := a.UpdateCheck(); err != nil {
+			xhttp.Error(r.Context(), w, &xhttp.Err{
+				Code: http.StatusInternalServerError,
+				Msg:  "Failed to check for updates",
+				Err:  err,
+			})
+			return
+		} else if !updateAvailable {
+			w.Write([]byte("Already up to date.\n"))
+			return
+		}
+
 		if err := a.Update(true); err != nil {
 			xhttp.Error(r.Context(), w, &xhttp.Err{
 				Code: http.StatusInternalServerError,
