@@ -6,6 +6,10 @@
 - **Environment**: Linux or WSL (Windows Subsystem for Linux)
 - **Architecture**: `amd64` / `x86_64` (Required due to LMDB dependency)
 
+## Architecture
+
+Before diving into the code, it's recommended to read [ARCHITECTURE.md](../ARCHITECTURE.md) to understand the high-level design, core components, and data flow.
+
 ## Quick Start
 
 1. **Use this Template**:

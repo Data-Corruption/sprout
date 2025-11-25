@@ -19,7 +19,7 @@ Sprout provides a unified architecture for building production-ready command-lin
 
 ## Architecture
 
-Sprout is designed around the principle of unified dependency injection, ensuring that your application state is consistent and easily testable.
+Sprout is designed around the principle of unified dependency injection, ensuring that your application state is consistent and easily testable. For a deep dive into the system design, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ### Why LMDB for config? Lemme tall ya
 
