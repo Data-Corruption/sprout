@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.1] - 2025-11-24
+
+Dummy version for testing.
+
 <!-- Replace with your changelog entries. You can start at any version that isn't already tagged.
 
 ## [v0.4.0] - 2025-11-24

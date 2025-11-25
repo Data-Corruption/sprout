@@ -15,7 +15,7 @@ REPO_NAME="sprout"
 APP_NAME="sprout"
 
 SERVICE="true"
-SERVICE_DESC="powerful discord bot client"
+SERVICE_DESC="Sprout example daemon"
 SERVICE_ARGS="service run"
 
 # print logo, i made this with https://manytools.org/hacker-tools/ascii-banner/
