@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.2] - 2025-11-24
+
+Fix test /update endpoint.
+
 ## [v0.4.1] - 2025-11-24
 
 Dummy version for testing.

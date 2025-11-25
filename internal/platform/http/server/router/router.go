@@ -9,8 +9,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const HashParam = "h"
-
 func New(a *app.App) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -22,10 +20,10 @@ func New(a *app.App) *chi.Mux {
 	})
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("sprout\n"))
+		w.Write([]byte("sprout " + a.Version))
 	})
 
-	r.Post("/update", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/update", func(w http.ResponseWriter, r *http.Request) {
 		if err := a.Update(true); err != nil {
 			xhttp.Error(r.Context(), w, &xhttp.Err{
 				Code: http.StatusInternalServerError,
