@@ -96,6 +96,12 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 		return ctx, fmt.Errorf("failed to view config: %w", err)
 	}
 
+	// override port (useful for testing)
+	oPort := cmd.Int("port")
+	if oPort != 0 {
+		cfg.Port = oPort
+	}
+
 	// calculate BaseURL
 	if a.Net.BaseURL, err = getBaseURL(cfg); err != nil {
 		return ctx, fmt.Errorf("failed to get base URL: %w", err)

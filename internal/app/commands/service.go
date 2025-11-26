@@ -52,15 +52,19 @@ var Service = register(func(a *app.App) *cli.Command {
 						return fmt.Errorf("failed to wait for network: %w", err)
 					}
 
-					// get configuration
-					cfg, err := database.ViewConfig(a.DB)
-					if err != nil {
-						return fmt.Errorf("failed to get configuration from database: %w", err)
+					// get port, handle override
+					port := cmd.Int("port")
+					if port == 0 {
+						cfg, err := database.ViewConfig(a.DB)
+						if err != nil {
+							return fmt.Errorf("failed to get configuration from database: %w", err)
+						}
+						port = cfg.Port
 					}
 
 					// create server
 					mux := router.New(a)
-					if err := server.New(a, cfg.Port, mux); err != nil {
+					if err := server.New(a, port, mux); err != nil {
 						return fmt.Errorf("failed to create server: %w", err)
 					}
 

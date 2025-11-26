@@ -55,6 +55,11 @@ func main() {
 				Aliases: []string{"v"},
 				Usage:   "print version and exit",
 			},
+			&cli.IntFlag{
+				Name:    "port",
+				Aliases: []string{"p"},
+				Usage:   "temporarily override port in config",
+			},
 			&cli.BoolFlag{
 				Name:    "migrate",
 				Aliases: []string{"m"},

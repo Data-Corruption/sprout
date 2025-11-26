@@ -36,7 +36,7 @@ func New(a *app.App) *chi.Mux {
 		}
 
 		data := map[string]any{
-			"Favicon":         `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='.9em' font-size='90' text-anchor='middle'>🌱</text></svg>`,
+			"Favicon":         template.URL(`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='.9em' font-size='90' text-anchor='middle'>🌱</text></svg>`),
 			"Title":           "sprout",
 			"Version":         a.Version,
 			"UpdateAvailable": cfg.UpdateAvailable,
