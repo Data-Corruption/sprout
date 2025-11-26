@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.9] - 2025-11-26
+
+- Dummy version for testing
+
 ## [v0.4.8] - 2025-11-26
 
 - Fix potential update race
