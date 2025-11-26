@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.7] - 2025-11-25
+
+- Dummy version for testing
+
 ## [v0.4.6] - 2025-11-25
 
 - Fix issue in /update where shutdown was preventing the client from receiving its response.
