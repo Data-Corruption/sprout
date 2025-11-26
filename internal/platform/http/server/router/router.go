@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sprout/internal/app"
 	"sprout/internal/platform/database"
-	"time"
 
 	"github.com/Data-Corruption/stdx/xhttp"
 	"github.com/Data-Corruption/stdx/xlog"
@@ -57,19 +56,12 @@ func New(a *app.App) *chi.Mux {
 			return
 		}
 
-		if err := a.Update(true); err != nil {
+		if err := a.DetachUpdate(); err != nil {
 			xhttp.Error(r.Context(), w, err)
 			return
 		}
 
 		w.WriteHeader(http.StatusAccepted)
-
-		go func() {
-			time.Sleep(1 * time.Second)
-			if err := a.Net.Server.Shutdown(); err != nil {
-				a.Log.Errorf("Failed to shutdown server: %v", err)
-			}
-		}()
 	})
 
 	r.Get("/update-status", func(w http.ResponseWriter, r *http.Request) {

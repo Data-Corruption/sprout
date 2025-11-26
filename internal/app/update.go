@@ -11,17 +11,17 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sprout/internal/platform/database"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/Data-Corruption/stdx/xhttp"
 	"golang.org/x/mod/semver"
-	"golang.org/x/time/rate"
 )
 
 const UpdateTimeout = 10 * time.Minute // max time for update process
 
-var uLimiter = rate.NewLimiter(rate.Every(3*time.Second), 1) // extra little padding for checks/updating
+var uOnce sync.Once
 
 var ErrDevBuild = &xhttp.Err{
 	Code: http.StatusNotImplemented,
@@ -65,14 +65,6 @@ func (a *App) Notify() error {
 // It returns true if an update is available, false otherwise.
 // When running a dev build (e.g. with `vX.X.X`), it returns false without checking.
 func (a *App) UpdateCheck() (bool, error) {
-	// rate limit
-	rCtx, rCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer rCancel()
-	if err := uLimiter.Wait(rCtx); err != nil {
-		// could be err, timeout, or burst exceeded
-		return false, fmt.Errorf("update check rate limited: %w", err)
-	}
-
 	if a.Version == "" {
 		return false, fmt.Errorf("failed to get appVersion from context")
 	}
@@ -102,20 +94,64 @@ func (a *App) UpdateCheck() (bool, error) {
 	return updateAvailable, nil
 }
 
-// Update prepares the update to be run on exit. Exit soon after calling this
-// function. Calling more than once just keeps setting UpdateAvailable to false.
-// This will prep the update regardless of if an update is available or not.
-// Aside from doing unnecessary work, updating when already on the latest version
-// is basically idempotent.
-func (a *App) Update(detached bool) error {
-	// rate limit
-	rCtx, rCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer rCancel()
-	if err := uLimiter.Wait(rCtx); err != nil {
-		// could be err, timeout, or burst exceeded
-		return fmt.Errorf("update rate limited: %w", err)
-	}
+// DeferUpdate prepares the install/update script to be run on exit.
+// It will prep the update regardless of if an update is available or not.
+// You should exit soon after calling this.
+// Calling either DeferUpdate or DetachUpdate more than once does nothing.
+// Only the first call will have any effect.
+func (a *App) DeferUpdate() error {
+	var rErr error
+	uOnce.Do(func() {
+		if err := a.uPrep(); err != nil {
+			rErr = err
+			return
+		}
 
+		// prepare update command
+		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.InstallScriptURL)
+		a.Log.Debugf("Prepared update, command: %s", pipeline)
+
+		a.SetPostCleanup(func() error {
+			rCtx, rCancel := context.WithTimeout(context.Background(), UpdateTimeout)
+			defer rCancel()
+
+			cmd := exec.CommandContext(rCtx, "sh", "-c", pipeline)
+			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+			return cmd.Run()
+		})
+	})
+	return rErr
+}
+
+// DetachUpdate starts the install/update script as a detached process.
+// It does so regardless of if an update is available or not.
+// After calling this, the process will soon be closed externally by the install/update script.
+// Calling either DeferUpdate or DetachUpdate more than once does nothing.
+// Only the first call will have any effect.
+func (a *App) DetachUpdate() error {
+	var rErr error
+	uOnce.Do(func() {
+		if err := a.uPrep(); err != nil {
+			rErr = err
+			return
+		}
+
+		// prepare update command
+		name := a.Name
+		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.InstallScriptURL)
+		logPath := filepath.Join(a.Paths.Storage, "update.log")
+		a.Log.Debugf("Prepared detached update: command: %s, logPath: %s", pipeline, logPath)
+
+		// run update (install/update script will close this process)
+		if err := runUpdateDetached(a.ServiceEnabled, name, pipeline, logPath); err != nil {
+			rErr = err
+			return
+		}
+	})
+	return rErr
+}
+
+func (a *App) uPrep() error {
 	// double check version string
 	if a.Version == "" {
 		return fmt.Errorf("failed to get appVersion")
@@ -123,8 +159,7 @@ func (a *App) Update(detached bool) error {
 	if a.Version == "vX.X.X" {
 		return ErrDevBuild
 	}
-
-	// set updateAvailable to false since we're updating
+	// set updateAvailable to false since we're updating, and followup to the current version
 	if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
 		cfg.UpdateAvailable = false
 		cfg.UpdateFollowup = a.Version
@@ -132,26 +167,6 @@ func (a *App) Update(detached bool) error {
 	}); err != nil {
 		return fmt.Errorf("failed to update updateAvailable in config: %w", err)
 	}
-
-	// prepare update command
-	name := a.Name
-	pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.InstallScriptURL)
-	logPath := filepath.Join(a.Paths.Storage, "update.log")
-	a.Log.Debugf("Prepared update, detached: %t, command: %s, logPath: %s", detached, pipeline, logPath)
-
-	a.SetPostCleanup(func() error {
-		if detached {
-			return runUpdateDetached(a.ServiceEnabled, name, pipeline, logPath)
-		} else {
-			rCtx, rCancel := context.WithTimeout(context.Background(), UpdateTimeout)
-			defer rCancel()
-
-			cmd := exec.CommandContext(rCtx, "sh", "-c", pipeline)
-			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-			return cmd.Run()
-		}
-	})
-
 	return nil
 }
 
@@ -179,6 +194,7 @@ func runUpdateDetached(serviceEnabled bool, name, pipeline, logPath string) erro
 			"--user",
 			"--unit="+unitName,
 			"--quiet",
+			"--no-block", // fully detached
 			"-p", "StandardOutput=journal",
 			"-p", "StandardError=journal",
 			"-p", syslogIdent,

@@ -55,7 +55,7 @@ var Update = register(func(a *app.App) *cli.Command {
 				return nil
 			}
 
-			return a.Update(false)
+			return a.DeferUpdate()
 		},
 	}
 })
