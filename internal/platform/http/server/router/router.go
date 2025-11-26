@@ -1,13 +1,22 @@
 package router
 
 import (
+	"embed"
+	"encoding/json"
+	"html/template"
 	"net/http"
 	"sprout/internal/app"
+	"sprout/internal/platform/database"
 
 	"github.com/Data-Corruption/stdx/xhttp"
 	"github.com/Data-Corruption/stdx/xlog"
 	"github.com/go-chi/chi/v5"
 )
+
+//go:embed templates/index.html
+var tmplFS embed.FS
+
+var tmpl = template.Must(template.ParseFS(tmplFS, "templates/index.html"))
 
 func New(a *app.App) *chi.Mux {
 	r := chi.NewRouter()
@@ -20,16 +29,27 @@ func New(a *app.App) *chi.Mux {
 	})
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("sprout " + a.Version))
+		cfg, err := database.ViewConfig(a.DB)
+		if err != nil {
+			xhttp.Error(r.Context(), w, err)
+			return
+		}
+
+		data := map[string]any{
+			"Favicon":         `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='.9em' font-size='90' text-anchor='middle'>🌱</text></svg>`,
+			"Title":           "sprout",
+			"Version":         a.Version,
+			"UpdateAvailable": cfg.UpdateAvailable,
+		}
+		if err := tmpl.Execute(w, data); err != nil {
+			xhttp.Error(r.Context(), w, err)
+			return
+		}
 	})
 
 	r.Get("/update", func(w http.ResponseWriter, r *http.Request) {
 		if updateAvailable, err := a.UpdateCheck(); err != nil {
-			xhttp.Error(r.Context(), w, &xhttp.Err{
-				Code: http.StatusInternalServerError,
-				Msg:  "Failed to check for updates",
-				Err:  err,
-			})
+			xhttp.Error(r.Context(), w, err)
 			return
 		} else if !updateAvailable {
 			w.Write([]byte("Already up to date.\n"))
@@ -37,20 +57,30 @@ func New(a *app.App) *chi.Mux {
 		}
 
 		if err := a.Update(true); err != nil {
-			xhttp.Error(r.Context(), w, &xhttp.Err{
-				Code: http.StatusInternalServerError,
-				Msg:  "Failed to start update",
-				Err:  err,
-			})
+			xhttp.Error(r.Context(), w, err)
 			return
 		}
-		if err := a.Net.Server.Shutdown(nil); err != nil {
+
+		w.WriteHeader(http.StatusAccepted)
+
+		if err := a.Net.Server.Shutdown(); err != nil {
 			a.Log.Errorf("Failed to shutdown server: %v", err)
 		}
-		w.Write([]byte("Starting update...\n"))
+	})
+
+	r.Get("/update-status", func(w http.ResponseWriter, r *http.Request) {
+		cfg, err := database.ViewConfig(a.DB)
+		if err != nil {
+			xhttp.Error(r.Context(), w, err)
+			return
+		}
+
+		updating := cfg.UpdateFollowup != "" && cfg.UpdateFollowup == a.Version
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]bool{"updating": updating}); err != nil {
+			xhttp.Error(r.Context(), w, err)
+		}
 	})
 
 	return r
 }
-
-//lint:file-ignore SA1012 nil is intentional

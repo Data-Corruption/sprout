@@ -51,3 +51,14 @@ This project uses a changelog-driven release process:
 3. GitHub Actions will automatically build the project and draft a release.
 4. Publish the release on GitHub to trigger the update for users.   
    They should see the update within a day or so.
+
+After configuring the template sections in the scripts, the repo is a pre-made example project ready to be released. By default, it will be a simple HTTP server with a web UI and update functionality. All the hardest parts, done first and for you, so you can focus on the fun parts.
+
+To see how the update process works in the app, see the [update command](../internal/app/commands/update.go).
+
+To see how the detached update process works, see the [router](../internal/platform/http/server/router/router.go).
+To test the detached update process:
+- publish a new release
+- run `YOUR_APP update --check` to force a check, otherwise it will wait and only check once a day.
+- visit/refresh `http://localhost:8080` in your browser.
+- you should see a notification with a button to update. Click it, and the app will update, just like magic ✨

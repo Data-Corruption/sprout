@@ -82,7 +82,7 @@ func TestUpdateCheck(t *testing.T) {
 			currentVersion: "vX.X.X",
 			latestVersion:  "v9.9.9",
 			wantUpdate:     false,
-			wantError:      false,
+			wantError:      true,
 		},
 	}
 

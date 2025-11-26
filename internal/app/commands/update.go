@@ -18,6 +18,10 @@ var Update = register(func(a *app.App) *cli.Command {
 				Name:  "notify",
 				Usage: "toggle update notification",
 			},
+			&cli.BoolFlag{
+				Name:  "check",
+				Usage: "just check for updates",
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			notify := cmd.Bool("notify")
@@ -38,6 +42,19 @@ var Update = register(func(a *app.App) *cli.Command {
 				}
 				return nil
 			}
+
+			check := cmd.Bool("check")
+			if check {
+				if updateAvailable, err := a.UpdateCheck(); err != nil {
+					return fmt.Errorf("failed to check for updates: %w", err)
+				} else if updateAvailable {
+					fmt.Println("Update available! Run 'sprout update' to update to the latest version.")
+				} else {
+					fmt.Println("No updates available.")
+				}
+				return nil
+			}
+
 			return a.Update(false)
 		},
 	}

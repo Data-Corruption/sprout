@@ -61,23 +61,18 @@ fi
 # - linting
 # - formatting
 # - tailwindcss
-# - tests
 # - etc.
 
-# run tests
-if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-  test_cmd=(go test -race ./...)
+# tests
+test_cmd=(go test -race ./...)
+if test_output="$("${test_cmd[@]}" 2>&1)"; then
+  printf '🟢 Tests Passed\n'
 else
-  test_cmd=(go test ./...)
-fi
-test_output="$("${test_cmd[@]}" 2>&1)" # capture both stdout and stderr
-status=$?
-if (( status != 0 )); then
+  status=$?
   printf '\n🔴 Tests failed:\n'
   printf '%s\n' "$test_output"
   exit $status
 fi
-printf '🟢 Tests Passed\n'
 
 # build
 LDFLAGS="-X 'main.version=$version' -X 'main.name=$APP_NAME' -X 'main.repoURL=$REPO_URL' -X 'main.installScriptURL=$INSTALL_SCRIPT_URL' -X 'main.serviceEnabled=$SERVICE'"

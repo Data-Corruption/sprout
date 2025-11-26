@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.4] - 2025-11-25
+
+- Overhaul detached update process / web UI
+
 ## [v0.4.3] - 2025-11-24
 
 Check for updates before starting update in /update endpoint.

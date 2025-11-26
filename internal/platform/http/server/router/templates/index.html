@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ .Favicon }}">
+    <title>{{ .Title }}</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --text-color: #e0e0e0;
+            --accent-color: #4caf50;
+            --secondary-text: #a0a0a0;
+            --card-bg: #1a1a1a;
+            --border-color: #333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 700;
+            letter-spacing: -0.05em;
+        }
+
+        .version {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;
+            margin-bottom: 2rem;
+            display: block;
+        }
+
+        .status {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .update-box {
+            background-color: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .update-text {
+            color: var(--accent-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>{{ .Title }}</h1>
+        <span class="version">{{ .Version }}</span>
+
+        <div class="status">
+            <p style="color: var(--secondary-text);">Hello World</p>
+        </div>
+
+        {{ if .UpdateAvailable }}
+        <div class="update-box" id="update-box">
+            <span class="update-text" id="update-text">New version available</span>
+            <div id="update-actions">
+                <button id="update-btn" onclick="startUpdate()">Update Now</button>
+            </div>
+            <div id="update-spinner" style="display: none;">
+                <div class="spinner"></div>
+                <span style="font-size: 0.9rem; color: var(--secondary-text);">Updating...</span>
+            </div>
+            <div id="update-error" style="display: none; color: #ff5252; font-size: 0.9rem; margin-top: 0.5rem;"></div>
+        </div>
+        <script>
+            function startUpdate() {
+                const btn = document.getElementById('update-btn');
+                const actions = document.getElementById('update-actions');
+                const spinner = document.getElementById('update-spinner');
+                const errorDiv = document.getElementById('update-error');
+
+                // Reset error
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+
+                // Show spinner
+                actions.style.display = 'none';
+                spinner.style.display = 'flex';
+                spinner.style.flexDirection = 'column';
+                spinner.style.alignItems = 'center';
+                spinner.style.gap = '0.5rem';
+
+                fetch('/update', { method: 'GET' }) // Changed to GET as per router definition
+                    .then(response => {
+                        if (response.status === 202) {
+                            pollStatus();
+                        } else {
+                            return response.text().then(text => {
+                                throw new Error(text || 'Update failed');
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        showError(err.message);
+                    });
+            }
+
+            function pollStatus() {
+                const startTime = Date.now();
+                const pollInterval = 3000;
+                const timeout = 30000;
+
+                const check = () => {
+                    if (Date.now() - startTime > timeout) {
+                        showError('Update timed out. Please check logs or try again.');
+                        return;
+                    }
+
+                    fetch('/update-status')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (!data.updating) {
+                                // Update finished (or failed silently, but version changed/flag cleared)
+                                // Reload to show new version or just refresh state
+                                window.location.reload();
+                            } else {
+                                setTimeout(check, pollInterval);
+                            }
+                        })
+                        .catch(err => {
+                            // Network error during polling? might be restarting
+                            console.log('Polling error (server might be restarting):', err);
+                            setTimeout(check, pollInterval);
+                        });
+                };
+
+                setTimeout(check, pollInterval);
+            }
+
+            function showError(msg) {
+                const actions = document.getElementById('update-actions');
+                const spinner = document.getElementById('update-spinner');
+                const errorDiv = document.getElementById('update-error');
+
+                spinner.style.display = 'none';
+                actions.style.display = 'block';
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = msg;
+            }
+        </script>
+        <style>
+            .spinner {
+                width: 24px;
+                height: 24px;
+                border: 3px solid rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
+                border-top-color: var(--accent-color);
+                animation: spin 1s ease-in-out infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+        {{ end }}
+    </div>
+</body>
+
+</html>

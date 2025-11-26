@@ -13,4 +13,7 @@ type Configuration struct {
 	UpdateNotifications bool      `json:"updateNotifications"`
 	LastUpdateCheck     time.Time `json:"lastUpdateCheck"`
 	UpdateAvailable     bool      `json:"updateAvailable"`
+
+	// version when /update is accepted. This is lazily used to determine if the update was successful after restart.
+	UpdateFollowup string `json:"updateFollowup"`
 }
