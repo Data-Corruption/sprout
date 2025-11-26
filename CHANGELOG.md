@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.5] - 2025-11-25
+
+- Dummy version for testing
+
 ## [v0.4.4] - 2025-11-25
 
 - Overhaul detached update process / web UI
