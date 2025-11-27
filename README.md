@@ -17,7 +17,7 @@ Sprout provides a unified architecture for building production-ready command-lin
 
 ## Features
 
-- **Modern CLI Interface**: Built on `urfave/cli/v3` for a standard, POSIX-compliant user experience.
+- **Modern CLI Interface**: Built on `urfave/cli/v3` for a standard, portable user experience.
 - **Self-Updating**: Integrated daily version checks and single-command updates.
 - **Daemon Mode**: Optional systemd-managed background service capability.
 - **Atomic State**: Shared LMDB database for reliable configuration and state management across Daemon and CLI processes.
