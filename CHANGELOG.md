@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.11] - 2025-11-26
+
+- Added new feature
+
 ## [v0.4.10] - 2025-11-26
 
 - Add port override for service subcommand
