@@ -32,12 +32,14 @@ Before diving into the code, it's recommended to read [ARCHITECTURE.md](ARCHITEC
    - **`SERVICE_DESC`**: Description for the systemd service.
    - **`INSTALL_SCRIPT_URL`**: Raw URL to your `scripts/install.sh`.
 
-4. **Build the project**:
+4. **Rename cmd Directory**: `cmd/sprout` to `cmd/YOUR_APP_NAME`
+
+5. **Build the project**:
    ```sh
    ./scripts/build.sh
    ```
 
-5. **Run the binary**:
+6. **Run the binary**:
    ```sh
    ./bin/linux-amd64 -h
    ```
