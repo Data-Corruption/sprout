@@ -1,52 +1,8 @@
 # Changelog
 
-## [v0.4.11] - 2025-11-26
-
-- Added new feature
-
-## [v0.4.10] - 2025-11-26
-
-- Add port override for service subcommand
-
-## [v0.4.9] - 2025-11-26
-
-- Dummy version for testing
-
-## [v0.4.8] - 2025-11-26
-
-- Fix potential update race
-
-## [v0.4.7] - 2025-11-25
-
-- Dummy version for testing
-
-## [v0.4.6] - 2025-11-25
-
-- Fix issue in /update where shutdown was preventing the client from receiving its response.
-
-## [v0.4.5] - 2025-11-25
-
-- Dummy version for testing
-
-## [v0.4.4] - 2025-11-25
-
-- Overhaul detached update process / web UI
-
-## [v0.4.3] - 2025-11-24
-
-Check for updates before starting update in /update endpoint.
-
-## [v0.4.2] - 2025-11-24
-
-Fix test /update endpoint.
-
-## [v0.4.1] - 2025-11-24
-
-Dummy version for testing.
-
 <!-- Replace with your changelog entries. You can start at any version that isn't already tagged.
 
-## [v0.4.0] - 2025-11-24
+## [v1.0.0] - 2025-11-24
 
 Minimal starter for Go CLI apps with an optional webserver daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.
 

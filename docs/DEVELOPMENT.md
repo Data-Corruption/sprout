@@ -15,13 +15,16 @@ Before diving into the code, it's recommended to read [ARCHITECTURE.md](ARCHITEC
 1. **Use this Template**:
    Click the "Use this template" button on GitHub to create a new repository based on Sprout.
 
-2. **Clone your new repository**:
+2. **Enable Github Actions Write Access**:
+   Go to the "Settings" tab of your repository, then Actions -> General -> Workflow permissions -> "Read and write permissions". Then save.
+
+3. **Clone your new repository**:
    ```sh
    git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
    cd YOUR_REPO
    ```
 
-3. **Configure the Template**:
+4. **Configure the Template**:
    All three files in `./scripts` have a template section at the top. Here are the variables you see (some repeated) between them:
 
    - **`APP_NAME` / `$AppName`**: Your application name (binary name).
@@ -32,14 +35,14 @@ Before diving into the code, it's recommended to read [ARCHITECTURE.md](ARCHITEC
    - **`SERVICE_DESC`**: Description for the systemd service.
    - **`INSTALL_SCRIPT_URL`**: Raw URL to your `scripts/install.sh`.
 
-4. **Rename cmd Directory**: `cmd/sprout` to `cmd/YOUR_APP_NAME`
+5. **Rename cmd Directory**: `cmd/sprout` to `cmd/YOUR_APP_NAME`
 
-5. **Build the project**:
+6. **Build the project**:
    ```sh
    ./scripts/build.sh
    ```
 
-6. **Run the binary**:
+7. **Run the binary**:
    ```sh
    ./bin/linux-amd64 -h
    ```
