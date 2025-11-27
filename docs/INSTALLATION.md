@@ -6,7 +6,7 @@
 
 ## Installation
 
-### Linux / macOS
+### Linux
 
 To install the latest version, run the following command:
 
