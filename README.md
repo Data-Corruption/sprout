@@ -1,7 +1,7 @@
 # 🌱 Sprout
 
 [![Build Status](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml/badge.svg)](https://github.com/Data-Corruption/sprout/actions/workflows/build.yml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE.md)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE.md)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Data-Corruption/sprout)](https://goreportcard.com/report/github.com/Data-Corruption/sprout)
 
 **The minimal, self-updating Go CLI starter kit.**
@@ -26,7 +26,7 @@ Sprout provides a unified architecture for building production-ready command-lin
 
 ## Architecture
 
-Sprout is designed around the principle of unified dependency injection, ensuring that your application state is consistent and easily testable. For a deep dive into the system design, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+Sprout is designed around the principle of unified dependency injection, ensuring that your application state is consistent and easily testable. For a deep dive into the system design, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Get Started
 
@@ -35,7 +35,7 @@ Sprout is designed around the principle of unified dependency injection, ensurin
 
 ## License
 
-Apache 2.0 - See [LICENSE.md](./LICENSE.md) for details.
+Apache 2.0 - See [LICENSE.md](LICENSE.md) for details.
 
 <br>
 

@@ -8,7 +8,7 @@
 
 ## Architecture
 
-Before diving into the code, it's recommended to read [ARCHITECTURE.md](../ARCHITECTURE.md) to understand the high-level design, core components, and data flow.
+Before diving into the code, it's recommended to read [ARCHITECTURE.md](ARCHITECTURE.md) to understand the high-level design, core components, and data flow.
 
 ## Quick Start
 
@@ -54,9 +54,9 @@ This project uses a changelog-driven release process:
 
 After configuring the template sections in the scripts, the repo is a pre-made example project ready to be released. By default, it will be a simple HTTP server with a web UI and update functionality. All the hardest parts, done first and for you, so you can focus on the fun parts.
 
-To see how the update process works in the app, see the [update command](../internal/app/commands/update.go).
+To see how the update process works in the app, see the [update command](internal/app/commands/update.go).
 
-To see how the detached update process works, see the [router](../internal/platform/http/server/router/router.go).
+To see how the detached update process works, see the [router](internal/platform/http/server/router/router.go).
 To test the detached update process:
 - publish a new release
 - run `YOUR_APP update --check` to force a check, otherwise it will wait and only check once a day.
