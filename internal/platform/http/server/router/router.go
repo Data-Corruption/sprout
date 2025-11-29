@@ -48,19 +48,10 @@ func New(a *app.App) *chi.Mux {
 	})
 
 	r.Get("/update", func(w http.ResponseWriter, r *http.Request) {
-		if updateAvailable, err := a.UpdateCheck(); err != nil {
-			xhttp.Error(r.Context(), w, err)
-			return
-		} else if !updateAvailable {
-			w.Write([]byte("Already up to date.\n"))
-			return
-		}
-
 		if err := a.DetachUpdate(); err != nil {
 			xhttp.Error(r.Context(), w, err)
 			return
 		}
-
 		w.WriteHeader(http.StatusAccepted)
 	})
 

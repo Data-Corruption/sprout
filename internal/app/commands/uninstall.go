@@ -35,7 +35,7 @@ var Uninstall = register(func(a *app.App) *cli.Command {
 				return fmt.Errorf("failed to get user home dir: %w", err)
 			}
 			serviceFile := filepath.Join(home, ".config/systemd/user", serviceName)
-			storagePath := a.Paths.Storage
+			storagePath := a.StorageDir
 			binPath, err := getBinPath()
 			if err != nil {
 				return fmt.Errorf("failed to get executable path: %w", err)

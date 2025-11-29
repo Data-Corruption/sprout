@@ -1,8 +1,9 @@
-// Assumes CGO is enabled.
+// Package app implements the application, following the dependency injection pattern.
 package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -23,65 +24,79 @@ type ReleaseSource interface {
 	GetLatest(ctx context.Context, repoURL string) (string, error)
 }
 
-type App struct {
-	Name             string
-	Version          string
-	RepoURL          string
-	InstallScriptURL string
-	ServiceEnabled   bool
+type CleanupFunc func() error
 
+/*
+App represents the application, following the dependency injection pattern.
+
+It provides:
+  - build-time variables
+  - injected services
+  - lifecycle management
+  - update handlers and migration synchronization
+*/
+type App struct {
+	// build-time variables
+	Name, Version, RepoURL, InstallScriptURL string
+	ServiceEnabled                           bool
+
+	// injected services, etc.
+
+	DB            *wrap.DB
+	Log           *xlog.Logger
+	Server        *xhttp.Server
+	BaseURL       string // e.g., "https://example.com/"
+	StorageDir    string // (e.g., ~/.appName)
+	RuntimeDir    string // (e.g., XDG_RUNTIME_DIR/name, fallback to /tmp/name-USER)
 	ReleaseSource ReleaseSource
 
-	DB  *wrap.DB
-	Log *xlog.Logger
-	Net struct {
-		BaseURL string // e.g., "https://example.com/"
-		Server  *xhttp.Server
-	}
-	Paths struct {
-		Storage string // (e.g., ~/.appName)
-		Runtime string // (e.g., XDG_RUNTIME_DIR/name, fallback to /tmp/name-USER)
-	}
-	Cleanup     []func() error
-	PostCleanup func() error
-	PostSetOnce sync.Once
-	CloseOnce   sync.Once
-	Context     context.Context
+	uOnce sync.Once // prep update only once before exiting
+
+	// lifecycle management
+	cleanup       []CleanupFunc
+	cleanupOnce   sync.Once
+	postCleanup   CleanupFunc
+	postCleanupMu sync.Mutex
+	// Inside commands, you can use <-a.Context.Done() to check for cancellation.
+	// You don't need to do this for the example service, the http server
+	// wrapper has its own signal listener.
+	Context context.Context
 }
 
 func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 
 	// paths
 	var err error
-	if a.Paths.Storage, err = getStoragePath(a.Name); err != nil {
+	if a.StorageDir, err = getStoragePath(a.Name); err != nil {
 		return nil, err
 	}
-	if a.Paths.Runtime, err = getRuntimePath(a.Name); err != nil {
+	if a.RuntimeDir, err = getRuntimePath(a.Name); err != nil {
 		return nil, err
 	}
 
 	// migration guard before touching anything
 	if !cmd.Bool("migrate") {
-		if err := a.Mguard(); err != nil {
+		if err := a.mguard(); err != nil {
 			return ctx, fmt.Errorf("failed to setup migration guard: %w", err)
 		}
 	} else {
+		// migrate flag set, we are the migrator instance, proceed without guard
 		fmt.Printf("%s version %s\n", a.Name, a.Version)
 	}
 
 	// logger
 	initLogLevel := x.Ternary(cmd.String("log") == "debug", "debug", "none")
-	a.Log, err = xlog.New(filepath.Join(a.Paths.Storage, "logs"), initLogLevel)
+	a.Log, err = xlog.New(filepath.Join(a.StorageDir, "logs"), initLogLevel)
 	if err != nil {
 		return ctx, fmt.Errorf("failed to initialize logger: %w", err)
 	}
 	a.AddCleanup(a.Log.Close)
 
 	a.Log.Debugf("Starting %s, version: %s, storage path: %s, runtime path: %s",
-		a.Name, a.Version, a.Paths.Storage, a.Paths.Runtime)
+		a.Name, a.Version, a.StorageDir, a.RuntimeDir)
 
 	// database
-	if a.DB, err = database.New(filepath.Join(a.Paths.Storage, "db"), a.Log); err != nil {
+	if a.DB, err = database.New(filepath.Join(a.StorageDir, "db"), a.Log); err != nil {
 		return ctx, fmt.Errorf("failed to initialize database: %w", err)
 	}
 	a.AddCleanup(func() error {
@@ -103,10 +118,10 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	}
 
 	// calculate BaseURL
-	if a.Net.BaseURL, err = getBaseURL(cfg); err != nil {
+	if a.BaseURL, err = getBaseURL(cfg); err != nil {
 		return ctx, fmt.Errorf("failed to get base URL: %w", err)
 	}
-	a.Log.Debugf("Base URL: %s", a.Net.BaseURL)
+	a.Log.Debugf("Base URL: %s", a.BaseURL)
 
 	// set log level
 	if initLogLevel != "debug" {
@@ -117,41 +132,52 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	// put logger into context
 	ctx = xlog.IntoContext(ctx, a.Log)
 
-	// daily update check / notification
-	if err := a.Notify(); err != nil {
-		a.Log.Errorf("Update notification failed: %v", err)
+	// update checking
+	if err := a.startAutoChecker(cfg); err != nil {
+		return ctx, fmt.Errorf("failed to start auto checker: %w", err)
 	}
 
 	a.Context = ctx
 	return ctx, nil
 }
 
-func (a *App) AddCleanup(f func() error) {
-	a.Cleanup = append(a.Cleanup, f)
-}
-
-func (a *App) SetPostCleanup(f func() error) {
-	a.PostSetOnce.Do(func() {
-		a.PostCleanup = f
-	})
-}
-
 func (a *App) Close() {
-	a.CloseOnce.Do(func() {
+	a.cleanupOnce.Do(func() {
 		// call cleanup funcs in reverse order
-		for i := len(a.Cleanup) - 1; i >= 0; i-- {
-			if err := a.Cleanup[i](); err != nil {
+		for i := len(a.cleanup) - 1; i >= 0; i-- {
+			if err := a.cleanup[i](); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to clean up: %v\n", err)
 			}
 		}
 		// call post cleanup func if set
-		if a.PostCleanup != nil {
+		a.postCleanupMu.Lock()
+		defer a.postCleanupMu.Unlock()
+		if a.postCleanup != nil {
 			time.Sleep(1 * time.Second) // just to be safe
-			if err := a.PostCleanup(); err != nil {
+			if err := a.postCleanup(); err != nil {
 				fmt.Fprintf(os.Stderr, "Post cleanup failure: %v\n", err)
 			}
 		}
 	})
+}
+
+func (a *App) AddCleanup(f func() error) {
+	a.cleanup = append(a.cleanup, f)
+}
+
+var ErrPostCleanupSet = errors.New("post cleanup already set")
+
+// SetPostCleanup sets the post cleanup func. It returns an error if it's already set.
+func (a *App) SetPostCleanup(f func() error) error {
+	a.postCleanupMu.Lock()
+	defer a.postCleanupMu.Unlock()
+
+	if a.postCleanup != nil {
+		return ErrPostCleanupSet
+	}
+
+	a.postCleanup = f
+	return nil
 }
 
 // getStoragePath calculates the storage path for the application (~/.appName).

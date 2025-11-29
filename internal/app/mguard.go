@@ -16,7 +16,7 @@ const (
 	InstancesDir       = "instances"
 )
 
-// Mguard sets up the migration guard for the application. It performs the following:
+// mguard sets up the migration guard for the application. It performs the following:
 // - Creates (if not exists) and acquires a shared lock on the lock file to prevent concurrent migrations.
 // - Writes the process PID to the instances directory to allow the installer/updater to signal shutdown.
 // It returns a cleanup function to be called on application exit.
@@ -25,14 +25,14 @@ const (
 // directory and sending SIGTERM. Except the service instance, which is stopped via systemctl. It then
 // attempts to acquire an exclusive lock on the lock file with a timeout. If successful, it proceeds
 // with the migration, releases the lock, and restarts the service, etc.
-func (a *App) Mguard() error {
+func (a *App) mguard() error {
 	// ensure dirs exists
-	if err := os.MkdirAll(filepath.Join(a.Paths.Runtime, InstancesDir), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(a.RuntimeDir, InstancesDir), 0o755); err != nil {
 		return err
 	}
 
 	// create/open lock file
-	lockPath := filepath.Join(a.Paths.Runtime, LockFileName)
+	lockPath := filepath.Join(a.RuntimeDir, LockFileName)
 	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func (a *App) Mguard() error {
 	}
 
 	// write PID file for installer to signal shutdown
-	pidPath := filepath.Join(a.Paths.Runtime, InstancesDir, strconv.Itoa(os.Getpid()))
+	pidPath := filepath.Join(a.RuntimeDir, InstancesDir, strconv.Itoa(os.Getpid()))
 	pidFile, err := os.OpenFile(pidPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		_ = f.Close()

@@ -21,11 +21,11 @@ var Service = register(func(a *app.App) *cli.Command {
 		Usage: "service management commands",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			// get service name / env file path
-			if a.Name == "" || a.Paths.Storage == "" {
+			if a.Name == "" || a.StorageDir == "" {
 				return fmt.Errorf("app name or storage path not found")
 			}
 			serviceName := a.Name + ".service"
-			envFilePath := fmt.Sprintf("%s/%s.env", a.Paths.Storage, a.Name)
+			envFilePath := fmt.Sprintf("%s/%s.env", a.StorageDir, a.Name)
 
 			// print service management commands
 			fmt.Printf("🖧 Service Cheat Sheet\n\n")
@@ -69,7 +69,7 @@ var Service = register(func(a *app.App) *cli.Command {
 					}
 
 					// start http server
-					if err := a.Net.Server.Listen(); err != nil { // blocks until server stops or shutdown signal received
+					if err := a.Server.Listen(); err != nil { // blocks until server stops or shutdown signal received
 						return fmt.Errorf("server stopped with error: %w", err)
 					} else {
 						fmt.Println("server stopped gracefully")

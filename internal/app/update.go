@@ -4,7 +4,6 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,13 +14,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Data-Corruption/lmdb-go/wrap"
 	"github.com/Data-Corruption/stdx/xhttp"
 	"golang.org/x/mod/semver"
 )
 
-const UpdateTimeout = 10 * time.Minute // max time for update process
-
-var uOnce sync.Once
+const (
+	UpdateTimeout       = 10 * time.Minute // max time for update process
+	UpdateCheckInterval = 24 * time.Hour   // interval for update checks
+)
 
 var ErrDevBuild = &xhttp.Err{
 	Code: http.StatusNotImplemented,
@@ -29,42 +30,94 @@ var ErrDevBuild = &xhttp.Err{
 	Err:  fmt.Errorf("development build detected, skipping"),
 }
 
-// Notify runs on app start to notify user of available updates if enabled in config.
-// It checks for updates once a day.
-func (a *App) Notify() error {
-	// check if update notifications are enabled
-	cfg, err := database.ViewConfig(a.DB)
-	if err != nil {
-		return fmt.Errorf("failed to view config: %w", err)
+// startAutoChecker starts a goroutine that checks for updates every [UpdateCheckInterval].
+func (a *App) startAutoChecker(currentCfgCopy *database.Configuration) error {
+	// if dev build, do nothing
+	if a.Version == "vX.X.X" {
+		return nil
 	}
 
-	if cfg.UpdateNotifications {
-		// once a day, very lightweight check, trying to be polite to github
-		if time.Since(cfg.LastUpdateCheck) > 24*time.Hour {
-			a.Log.Debug("Checking for updates...")
-			// update check time in config
-			if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
-				cfg.LastUpdateCheck = time.Now()
-				return nil
-			}); err != nil {
-				return fmt.Errorf("failed to update lastUpdateCheck in config: %w", err)
+	// if update notifications are enabled, calculate initial delay for next check
+	initialDelay := UpdateCheckInterval
+	if currentCfgCopy.UpdateNotifications {
+		// if last check was more than UpdateCheckInterval ago, do one right now
+		if time.Since(currentCfgCopy.LastUpdateCheck) > UpdateCheckInterval {
+			var err error
+			currentCfgCopy.UpdateAvailable, err = a.CheckForUpdate()
+			if err != nil {
+				a.Log.Errorf("Initial update check failed: %v", err) // may just be a network issue, so don't fail
 			}
-			updateAvailable, err := a.UpdateCheck()
-			if err != nil && !errors.Is(err, ErrDevBuild) {
-				a.Log.Errorf("Update check failed: %v", err) // just log since might not be online
-			}
-			if updateAvailable {
-				fmt.Println("Update available! Run 'sprout update' to update to the latest version.")
-			}
+		} else {
+			initialDelay = time.Until(currentCfgCopy.LastUpdateCheck.Add(UpdateCheckInterval))
+		}
+		// cli notification
+		if currentCfgCopy.UpdateAvailable {
+			fmt.Println("Update available! Run 'sprout update' to update to the latest version.")
 		}
 	}
+
+	// start auto checker
+	var acWaitGroup sync.WaitGroup
+	acCloseChan := make(chan struct{})
+	acWaitGroup.Add(1)
+	go func() {
+		defer acWaitGroup.Done()
+
+		// handle initial delay interruptibly
+		timer := time.NewTimer(initialDelay)
+		select {
+		case <-timer.C:
+			// continue
+		case <-acCloseChan:
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return
+		}
+
+		// check helper
+		check := func() {
+			cfg, err := database.ViewConfig(a.DB) // re-view since users can toggle update notifications
+			if err != nil {
+				a.Log.Errorf("failed to view config: %v", err)
+				return
+			}
+			if cfg.UpdateNotifications {
+				if _, err := a.CheckForUpdate(); err != nil {
+					a.Log.Errorf("Update check failed: %v", err) // may just be a network issue
+				}
+			}
+		}
+		check() // do one after initial delay
+
+		// start periodic checks
+		ticker := time.NewTicker(UpdateCheckInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-acCloseChan:
+				return
+			case <-ticker.C:
+				check()
+			}
+		}
+	}()
+
+	// ensure auto checker is stopped on cleanup
+	a.AddCleanup(func() error {
+		close(acCloseChan)
+		acWaitGroup.Wait()
+		return nil
+	})
+
 	return nil
 }
 
 // Check checks if there is a newer version of the application available and updates the config accordingly.
 // It returns true if an update is available, false otherwise.
 // When running a dev build (e.g. with `vX.X.X`), it returns false without checking.
-func (a *App) UpdateCheck() (bool, error) {
+func (a *App) CheckForUpdate() (bool, error) {
 	if a.Version == "" {
 		return false, fmt.Errorf("failed to get appVersion from context")
 	}
@@ -86,6 +139,7 @@ func (a *App) UpdateCheck() (bool, error) {
 	// update config
 	if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
 		cfg.UpdateAvailable = updateAvailable
+		cfg.LastUpdateCheck = time.Now()
 		return nil
 	}); err != nil {
 		return false, fmt.Errorf("failed to update updateAvailable in config: %w", err)
@@ -101,8 +155,8 @@ func (a *App) UpdateCheck() (bool, error) {
 // Only the first call will have any effect.
 func (a *App) DeferUpdate() error {
 	var rErr error
-	uOnce.Do(func() {
-		if err := a.uPrep(); err != nil {
+	a.uOnce.Do(func() {
+		if err := uPrep(a.Version, a.DB); err != nil {
 			rErr = err
 			return
 		}
@@ -130,8 +184,8 @@ func (a *App) DeferUpdate() error {
 // Only the first call will have any effect.
 func (a *App) DetachUpdate() error {
 	var rErr error
-	uOnce.Do(func() {
-		if err := a.uPrep(); err != nil {
+	a.uOnce.Do(func() {
+		if err := uPrep(a.Version, a.DB); err != nil {
 			rErr = err
 			return
 		}
@@ -139,7 +193,7 @@ func (a *App) DetachUpdate() error {
 		// prepare update command
 		name := a.Name
 		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.InstallScriptURL)
-		logPath := filepath.Join(a.Paths.Storage, "update.log")
+		logPath := filepath.Join(a.StorageDir, "update.log")
 		a.Log.Debugf("Prepared detached update: command: %s, logPath: %s", pipeline, logPath)
 
 		// run update (install/update script will close this process)
@@ -151,18 +205,20 @@ func (a *App) DetachUpdate() error {
 	return rErr
 }
 
-func (a *App) uPrep() error {
+// uPrep prepares the update by setting updateAvailable to false and updateFollowup to the current version.
+// After restart, updateFollowup will be used to lazily infer if an update was successful.
+func uPrep(version string, db *wrap.DB) error {
 	// double check version string
-	if a.Version == "" {
+	if version == "" {
 		return fmt.Errorf("failed to get appVersion")
 	}
-	if a.Version == "vX.X.X" {
+	if version == "vX.X.X" {
 		return ErrDevBuild
 	}
 	// set updateAvailable to false since we're updating, and followup to the current version
-	if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+	if err := database.UpdateConfig(db, func(cfg *database.Configuration) error {
 		cfg.UpdateAvailable = false
-		cfg.UpdateFollowup = a.Version
+		cfg.UpdateFollowup = version
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to update updateAvailable in config: %w", err)

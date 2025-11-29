@@ -20,7 +20,7 @@ func (m *MockReleaseSource) GetLatest(ctx context.Context, repoURL string) (stri
 	return m.LatestVersion, m.Error
 }
 
-func TestUpdateCheck(t *testing.T) {
+func TestCheckForUpdate(t *testing.T) {
 	// Setup temporary directory for DB and Logs
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "db")
@@ -100,18 +100,18 @@ func TestUpdateCheck(t *testing.T) {
 				},
 			}
 
-			// Run UpdateCheck
-			gotUpdate, err := app.UpdateCheck()
+			// Run CheckForUpdate
+			gotUpdate, err := app.CheckForUpdate()
 
 			// Check Error
 			if (err != nil) != tt.wantError {
-				t.Errorf("UpdateCheck() error = %v, wantError %v", err, tt.wantError)
+				t.Errorf("CheckForUpdate() error = %v, wantError %v", err, tt.wantError)
 				return
 			}
 
 			// Check Result
 			if gotUpdate != tt.wantUpdate {
-				t.Errorf("UpdateCheck() = %v, want %v", gotUpdate, tt.wantUpdate)
+				t.Errorf("CheckForUpdate() = %v, want %v", gotUpdate, tt.wantUpdate)
 			}
 
 			// Verify DB state if successful

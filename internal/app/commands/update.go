@@ -45,7 +45,7 @@ var Update = register(func(a *app.App) *cli.Command {
 
 			check := cmd.Bool("check")
 			if check {
-				if updateAvailable, err := a.UpdateCheck(); err != nil {
+				if updateAvailable, err := a.CheckForUpdate(); err != nil {
 					return fmt.Errorf("failed to check for updates: %w", err)
 				} else if updateAvailable {
 					fmt.Println("Update available! Run 'sprout update' to update to the latest version.")
