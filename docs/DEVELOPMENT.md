@@ -8,8 +8,7 @@
 
 ## Architecture
 
-Before diving into the code, it's not a bad idea to read [ARCHITECTURE.md](ARCHITECTURE.md)  
-to understand the high-level design, core components, and data flow.
+Before diving into the code, check out [ARCHITECTURE.md](ARCHITECTURE.md) to understand the high-level design, core components, and data flow.
 
 ## Quick Start
 
