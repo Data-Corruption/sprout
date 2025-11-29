@@ -67,3 +67,18 @@ To test the detached update process:
 - run `YOUR_APP update --check` to force a check, otherwise it will wait and only check once a day.
 - visit/refresh `http://localhost:8080` in your browser.
 - you should see a notification with a button to update. Click it, and the app will update, just like magic ✨
+
+## Outgrowing the Template
+
+### Scaling Beyond GitHub Releases
+
+The default update mechanism is fairly lightweight: one GET request per daily check, plus two downloads when a user updates. This works well for small to medium user bases.
+
+**When to migrate**: If you reach mid-upper tens of thousands of users, you'll want to self-host releases via a CDN to reduce GitHub's load and improve reliability.
+
+**Migration steps**:
+1. Add a secondary upload target to your release workflow (CDN, S3, etc.)
+2. Update your app to check/use this new endpoint instead of GitHub
+3. After most users migrate, remove the GitHub upload target
+
+This migration is outside Sprout's scope, but the process is straightforward.
