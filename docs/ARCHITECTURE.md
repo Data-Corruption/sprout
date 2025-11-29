@@ -102,4 +102,4 @@ Each Sprout instance writes its PID to a runtime directory. The installer uses t
 ## Security
 
 > [!IMPORTANT]
-> Beyond the basics (checksum verification, etc.), Sprout doesn't have a full security model. It's a starter kit / template. Different applications have totally different security requirements and threat models, so you're gonna need to design and implement your own security model. TLDR; I can't really generate a one-size-fits-all security model... go read the [OWASP cheatsheet series](https://cheatsheetseries.owasp.org/). The [CI/CD cheatsheet](https://cheatsheetseries.owasp.org/cheatsheets/CI_CD_Security_Cheat_Sheet.html) is a good starting point.
+> Beyond the basics (checksum verification, etc.), Sprout doesn't have a full security model. It's a starter kit / template. Different applications have totally different security requirements and threat models, so you're gonna need to design and implement your own security model. TLDR; I can't really write a one-size-fits-all security model, go read the [OWASP cheatsheet series](https://cheatsheetseries.owasp.org/) if your app will be handling sensitive data.
