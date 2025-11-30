@@ -44,5 +44,5 @@ Apache 2.0 - See [LICENSE.md](LICENSE.md) for details.
 </sub>
 
 <!--
-WHOA! secrets! secret messages! Hidden level! https://youtu.be/zwZISypgA9M
+WHOA! secrets, secret messages, hidden level! https://youtu.be/zwZISypgA9M
 -->
