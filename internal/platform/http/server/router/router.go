@@ -47,6 +47,10 @@ func New(a *app.App) *chi.Mux {
 		}
 	})
 
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.Get("/update", func(w http.ResponseWriter, r *http.Request) {
 		if err := a.DetachUpdate(); err != nil {
 			xhttp.Error(r.Context(), w, err)

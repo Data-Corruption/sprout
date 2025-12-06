@@ -78,7 +78,7 @@ The database logic is encapsulated in `internal/platform/database`, providing a 
 
 ### Self-Update Mechanism
 The update flow is sophisticated, handling different scenarios:
-1.  **Check**: Queries the Release Source (e.g., GitHub Releases) for a new version.
+1.  **Check**: Queries the Release Source (e.g., GitHub Releases) for a new version. Automatic checks are lazily rate-limited to once every 24 hours. Manual checks via `YOUR_APP update --check` are not rate-limited.
 2.  **Update**: Re-fetches the install script and executes it.
     -   **Deferred**: Runs after cleanup before exiting.
     -   **Detached**: Spawns a detached process to handle the update. This will result in the calling process eventually being closed by the install/update script. Also this works even if under systemd.

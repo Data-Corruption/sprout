@@ -41,7 +41,7 @@ func (a *App) startAutoChecker(currentCfgCopy *database.Configuration) error {
 	initialDelay := UpdateCheckInterval
 	if currentCfgCopy.UpdateNotifications {
 		// if last check was more than UpdateCheckInterval ago, do one right now
-		if time.Since(currentCfgCopy.LastUpdateCheck) > UpdateCheckInterval {
+		if time.Since(currentCfgCopy.LastUpdateCheck) >= UpdateCheckInterval {
 			var err error
 			currentCfgCopy.UpdateAvailable, err = a.CheckForUpdate()
 			if err != nil {
@@ -56,7 +56,7 @@ func (a *App) startAutoChecker(currentCfgCopy *database.Configuration) error {
 		}
 	}
 
-	// start auto checker
+	// start auto checker. on tick if update notifications are enabled, check for updates
 	var acWaitGroup sync.WaitGroup
 	acCloseChan := make(chan struct{})
 	acWaitGroup.Add(1)
@@ -77,12 +77,14 @@ func (a *App) startAutoChecker(currentCfgCopy *database.Configuration) error {
 
 		// check helper
 		check := func() {
-			cfg, err := database.ViewConfig(a.DB) // re-view since users can toggle update notifications
+			cfg, err := database.ViewConfig(a.DB)
 			if err != nil {
 				a.Log.Errorf("failed to view config: %v", err)
 				return
 			}
-			if cfg.UpdateNotifications {
+			// the -1 minute is to account for the time between the tick firing and LastUpdateCheck being set.
+			// otherwise, on every other tick, the check would be skipped.
+			if cfg.UpdateNotifications && time.Since(cfg.LastUpdateCheck) >= UpdateCheckInterval-time.Minute {
 				if _, err := a.CheckForUpdate(); err != nil {
 					a.Log.Errorf("Update check failed: %v", err) // may just be a network issue
 				}
@@ -114,7 +116,7 @@ func (a *App) startAutoChecker(currentCfgCopy *database.Configuration) error {
 	return nil
 }
 
-// Check checks if there is a newer version of the application available and updates the config accordingly.
+// CheckForUpdate checks if there is a newer version of the application available and updates the config accordingly.
 // It returns true if an update is available, false otherwise.
 // When running a dev build (e.g. with `vX.X.X`), it returns false without checking.
 func (a *App) CheckForUpdate() (bool, error) {
