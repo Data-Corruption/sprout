@@ -2,6 +2,10 @@
 
 <!-- Replace with your changelog entries. You can start at any version that isn't already tagged.
 
+## [v1.0.1] - 2025-12-06
+
+Example update.
+
 ## [v1.0.0] - 2025-11-24
 
 Minimal starter for Go CLI apps with an optional webserver daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.

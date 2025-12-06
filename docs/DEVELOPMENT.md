@@ -53,7 +53,7 @@ Before diving into the code, check out [ARCHITECTURE.md](ARCHITECTURE.md) to und
 
 This project uses a changelog-driven release process:
 
-1. Add an entry to `CHANGELOG.md` describing your changes.
+1. Insert an entry to `CHANGELOG.md` under # Changelog, describing your changes. See [CHANGELOG.md](CHANGELOG.md) for example.
 2. Push your changes to the `main` branch.
 3. GitHub Actions will automatically build the project and draft a release.
 4. Publish the release on GitHub to trigger the update for users.   
