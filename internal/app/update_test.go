@@ -98,6 +98,7 @@ func TestCheckForUpdate(t *testing.T) {
 					LatestVersion: tt.latestVersion,
 					Error:         tt.mockError,
 				},
+				Context: context.Background(),
 			}
 
 			// Run CheckForUpdate
