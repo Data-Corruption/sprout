@@ -1,12 +1,14 @@
 # Changelog
 
-<!-- Replace with your changelog entries. You can start at any version that isn't already tagged.
+<!--
+Replace with your changelog entries. You can start at any version that isn't already tagged.
+Remove the leading "//" from the example entries. It's to keep the CI from thinking they're real.
 
-## [v1.0.1] - 2025-12-06
+// ## [v1.0.1] - 2025-12-06
 
 Example update.
 
-## [v1.0.0] - 2025-11-24
+// ## [v1.0.0] - 2025-11-24
 
 Minimal starter for Go CLI apps with an optional webserver daemon, changelog‑driven GitHub Actions CI/CD, and self‑updating installs.
 
