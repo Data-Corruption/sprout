@@ -127,7 +127,7 @@ func (a *App) CheckForUpdate() (bool, error) {
 		return false, ErrDevBuild
 	}
 
-	lCtx, lCancel := context.WithTimeout(context.Background(), 8*time.Second)
+	lCtx, lCancel := context.WithTimeout(a.Context, 8*time.Second)
 	defer lCancel()
 
 	latest, err := a.ReleaseSource.GetLatest(lCtx, a.RepoURL)
@@ -168,7 +168,7 @@ func (a *App) DeferUpdate() error {
 		a.Log.Debugf("Prepared update, command: %s", pipeline)
 
 		a.SetPostCleanup(func() error {
-			rCtx, rCancel := context.WithTimeout(context.Background(), UpdateTimeout)
+			rCtx, rCancel := context.WithTimeout(a.Context, UpdateTimeout)
 			defer rCancel()
 
 			cmd := exec.CommandContext(rCtx, "sh", "-c", pipeline)

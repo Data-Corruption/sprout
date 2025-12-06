@@ -153,7 +153,7 @@ func (a *App) Close() {
 		a.postCleanupMu.Lock()
 		defer a.postCleanupMu.Unlock()
 		if a.postCleanup != nil {
-			time.Sleep(1 * time.Second) // just to be safe
+			time.Sleep(500 * time.Millisecond) // not sure if i need this actually
 			if err := a.postCleanup(); err != nil {
 				fmt.Fprintf(os.Stderr, "Post cleanup failure: %v\n", err)
 			}

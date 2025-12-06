@@ -35,7 +35,7 @@ var Update = register(func(a *app.App) *cli.Command {
 					return fmt.Errorf("failed to update notification setting in config: %w", err)
 				}
 				// print status
-				if !updateNotifications {
+				if updateNotifications {
 					fmt.Println("Update notifications are now enabled.")
 				} else {
 					fmt.Println("Update notifications are now disabled.")
