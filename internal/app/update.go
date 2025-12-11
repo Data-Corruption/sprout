@@ -229,8 +229,6 @@ func uPrep(version string, db *wrap.DB) error {
 }
 
 func runUpdateDetached(serviceEnabled bool, name, pipeline, logPath string) error {
-	var cmd *exec.Cmd
-
 	if serviceEnabled {
 		// Run as transient systemd service (like a service but one-off and
 		// configured via cmdline args). Assuming this is run from in the daemon,
@@ -246,7 +244,7 @@ func runUpdateDetached(serviceEnabled bool, name, pipeline, logPath string) erro
 		runtime := fmt.Sprintf("RuntimeMaxSec=%ds", int(UpdateTimeout.Seconds()))
 		syslogIdent := fmt.Sprintf("SyslogIdentifier=%s-update", name)
 
-		cmd = exec.CommandContext(
+		cmd := exec.CommandContext(
 			lCtx,
 			"systemd-run",
 			"--user",
@@ -261,6 +259,7 @@ func runUpdateDetached(serviceEnabled bool, name, pipeline, logPath string) erro
 			"-p", "TimeoutStopSec=30s", // graceful shutdown time
 			"/bin/sh", "-c", pipeline,
 		)
+		return cmd.Run()
 	} else {
 		// Not under threat of c group being killed, so just use setsid
 		// with shell-managed logging. escape logPath to be safe.
@@ -276,6 +275,4 @@ func runUpdateDetached(serviceEnabled bool, name, pipeline, logPath string) erro
 		}
 		return nil
 	}
-
-	return cmd.Run()
 }
