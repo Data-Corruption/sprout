@@ -335,6 +335,10 @@ if [ "$SERVICE" = "true" ]; then
         printf "Starting service ...\n"
         systemctl --user start "$SERVICE_NAME" || { rc=$?; fatalf 'Failed to start service (rc=%d)' "$rc"; }
     fi
+
+    if ! loginctl show-user "$USER" 2>/dev/null | grep -q 'Linger=yes'; then
+        loginctl enable-linger "$USER" || warnf 'Failed to enable lingering'
+    fi
 fi
 
 # Add to PATH -----------------------------------------------------------------
