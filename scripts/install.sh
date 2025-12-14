@@ -337,7 +337,8 @@ if [ "$SERVICE" = "true" ]; then
     fi
 
     if ! loginctl show-user "$USER" 2>/dev/null | grep -q 'Linger=yes'; then
-        loginctl enable-linger "$USER" || warnf 'Failed to enable lingering'
+       warnf 'If you want the service to run when you are not logged in, run:'
+       warnf '    sudo loginctl enable-linger %s' "$USER"
     fi
 fi
 
