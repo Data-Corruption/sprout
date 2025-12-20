@@ -99,7 +99,17 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	if a.DB, err = database.New(filepath.Join(a.StorageDir, "db"), a.Log); err != nil {
 		return ctx, fmt.Errorf("failed to initialize database: %w", err)
 	}
+	// capture migrate flag to avoid overwriting PreUpdateVersion during migration runs (which happen during updates)
+	isMigrate := cmd.Bool("migrate")
 	a.AddCleanup(func() error {
+		if !isMigrate {
+			if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+				cfg.PreUpdateVersion = a.Version
+				return nil
+			}); err != nil {
+				a.Log.Errorf("failed to set PreUpdateVersion on shutdown: %v", err)
+			}
+		}
 		a.DB.Close()
 		return nil
 	})

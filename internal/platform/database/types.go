@@ -15,5 +15,5 @@ type Configuration struct {
 	UpdateAvailable     bool      `json:"updateAvailable"`
 
 	// version when /update is accepted. This is lazily used to determine if the update was successful after restart.
-	UpdateFollowup string `json:"updateFollowup"`
+	PreUpdateVersion string `json:"preUpdateVersion"`
 }

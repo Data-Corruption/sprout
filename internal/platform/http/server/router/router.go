@@ -66,7 +66,7 @@ func New(a *app.App) *chi.Mux {
 			return
 		}
 
-		updating := cfg.UpdateFollowup != "" && cfg.UpdateFollowup == a.Version
+		updating := cfg.PreUpdateVersion != "" && cfg.PreUpdateVersion == a.Version
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]bool{"updating": updating}); err != nil {
 			xhttp.Error(r.Context(), w, err)
