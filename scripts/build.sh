@@ -15,8 +15,8 @@ umask 022
 # Config --------------------------------------------------------------
 
 APP_NAME="sprout"
-RELEASE_URL="https://harmony-cd.regfile.net/release/"
-CONTACT_URL="https://harmony-cd.regfile.net/"
+RELEASE_URL="https://cd.example.com/release/"
+CONTACT_URL="https://codeberg.org/DataCorruption/Sprout"
 
 SERVICE="true"
 SERVICE_DESC="Sprout daemon"

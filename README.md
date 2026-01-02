@@ -1,8 +1,8 @@
 # 🌱 Sprout
 
-[![Build Status](https://codeberg.org/Libertalia/Harmony-Server/actions/workflows/build.yml/badge.svg)](https://codeberg.org/Libertalia/Harmony-Server/actions/workflows/build.yml)
+[![Build Status](https://codeberg.org/DataCorruption/Sprout/actions/workflows/build.yml/badge.svg)](https://codeberg.org/DataCorruption/Sprout/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE.md)
-[![Go Report Card](https://goreportcard.com/badge/codeberg.org/Libertalia/Harmony-Server)](https://goreportcard.com/report/codeberg.org/Libertalia/Harmony-Server)
+[![Go Report Card](https://goreportcard.com/badge/codeberg.org/DataCorruption/Sprout)](https://goreportcard.com/report/codeberg.org/DataCorruption/Sprout)
 
 **The minimal, self-updating Go CLI starter kit.**
 

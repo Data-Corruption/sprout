@@ -2,7 +2,7 @@
 
 # Target: ~POSIX Linux x86_64/amd64, user-level install, optional systemd --user unit
 # Requires: curl, gzip, mktemp, install, sha256sum, sed, awk, (and systemd if SERVICE=true)
-# Example: curl -fsSL https://harmony-cd.regfile.net/release/install.sh | sh
+# Example: curl -fsSL https://cd.example.com/release/install.sh | sh
 
 # print logo, i made this with https://manytools.org/hacker-tools/ascii-banner/
 cat << 'EOF'
