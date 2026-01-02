@@ -1,0 +1,69 @@
+name: Build / Release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout (persistent worktree, full history, minimal network)
+        shell: bash
+        env:
+          VERBOSE: ${{ vars.VERBOSE }}
+          PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 022
+
+          command -v git >/dev/null 2>&1 || { printf "🔴 error: missing git\n" >&2; exit 1; }
+
+          : "${FORGEJO_REPOSITORY:?missing FORGEJO_REPOSITORY}"
+          : "${FORGEJO_SERVER_URL:?missing FORGEJO_SERVER_URL}"
+          : "${FORGEJO_SHA:?missing FORGEJO_SHA}"
+
+          # Use token for authenticated operations (push)
+          ORIGIN="${FORGEJO_SERVER_URL%/}/${FORGEJO_REPOSITORY}.git"
+          if [ -n "${PUSH_TOKEN:-}" ]; then
+            AUTH_ORIGIN=$(echo "$ORIGIN" | sed "s|https://|https://token:${PUSH_TOKEN}@|")
+          else
+            printf "🔴 error: missing PUSH_TOKEN\n" >&2
+            exit 1
+          fi
+
+          GIT_QUIET=$([[ -n "${VERBOSE:-}" ]] && echo "" || echo "--quiet")
+          REPO_DIR="$HOME/.cache/forgejo-run-cache/${FORGEJO_REPOSITORY}"
+          mkdir -p "${REPO_DIR}"
+
+          if [ ! -d "${REPO_DIR}/.git" ]; then
+            git clone ${GIT_QUIET} "${ORIGIN}" "${REPO_DIR}"
+            printf "🟢 worktree cloned\n"
+          fi
+
+          # Set push URL with auth, keep fetch URL public
+          git -C "${REPO_DIR}" remote set-url --push origin "${AUTH_ORIGIN}"
+          # Fetch full history/tags incrementally
+          git -C "${REPO_DIR}" fetch ${GIT_QUIET} --tags --prune origin
+          printf "🟢 fetched delta\n"
+
+          # Make the checkout exactly match the workflow commit SHA
+          git -C "${REPO_DIR}" reset ${GIT_QUIET} --hard "${FORGEJO_SHA}"
+          printf "🟢 Checked out %s at %s\n" "${FORGEJO_REPOSITORY}" "${FORGEJO_SHA}"
+
+      - name: Build (and release if applicable)
+        shell: bash
+        env:
+          VERBOSE: ${{ vars.VERBOSE }}
+          TAILWIND_VERSION: ${{ vars.TAILWIND_VERSION }}
+          DAISYUI_VERSION: ${{ vars.DAISYUI_VERSION }}
+          REFETCH_TOOLS: ${{ vars.REFETCH_TOOLS }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          cd "$HOME/.cache/forgejo-run-cache/${FORGEJO_REPOSITORY}"
+          chmod +x scripts/build.sh
+          ./scripts/build.sh

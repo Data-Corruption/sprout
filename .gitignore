@@ -1,0 +1,9 @@
+
+esbuild
+tailwindcss
+
+*output.css
+*daisyui.mjs
+*daisyui-theme.mjs
+
+bin/
