@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sprout/internal/platform/database"
+	"sprout/internal/platform/database/config"
 	"testing"
 
 	"github.com/Data-Corruption/stdx/xlog"
@@ -117,7 +118,7 @@ func TestCheckForUpdate(t *testing.T) {
 
 			// Verify DB state if successful
 			if !tt.wantError && tt.currentVersion != "vX.X.X" {
-				cfg, err := database.ViewConfig(db)
+				cfg, err := config.View(db)
 				if err != nil {
 					t.Fatalf("Failed to view config: %v", err)
 				}

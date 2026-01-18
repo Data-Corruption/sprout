@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"sprout/internal/app"
-	"sprout/internal/platform/database"
+	"sprout/internal/platform/database/config"
+	"sprout/internal/types"
 
 	"github.com/urfave/cli/v3"
 )
@@ -27,7 +28,7 @@ var Update = register(func(a *app.App) *cli.Command {
 			notify := cmd.Bool("notify")
 			if notify {
 				var updateNotifications bool
-				if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+				if err := config.Update(a.DB, func(cfg *types.Configuration) error {
 					cfg.UpdateNotifications = !cfg.UpdateNotifications
 					updateNotifications = cfg.UpdateNotifications
 					return nil

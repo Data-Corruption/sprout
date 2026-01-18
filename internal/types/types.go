@@ -1,4 +1,4 @@
-package database
+package types
 
 import (
 	"time"
@@ -21,4 +21,14 @@ type Configuration struct {
 	PreUpdateVersion string `json:"preUpdateVersion"`
 	// incremented on each service start (usually server listen or similar), used for detecting restarts
 	StartCounter int `json:"startCounter"`
+}
+
+func DefaultConfig() Configuration {
+	return Configuration{
+		LogLevel:            "WARN",
+		Port:                DefaultPort,
+		Host:                "localhost",
+		UpdateNotifications: true,
+		LastUpdateCheck:     time.Time{},
+	}
 }

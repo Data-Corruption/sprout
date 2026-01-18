@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"sprout/internal/types"
 	"sprout/pkg/migrator"
 
 	"github.com/Data-Corruption/lmdb-go/lmdb"
@@ -15,17 +16,11 @@ func Migrate(db *wrap.DB, logger *xlog.Logger) error {
 	// Add steps here. Order matters!
 
 	m.Add("v1", "Initial Schema", func(txn *lmdb.Txn) error {
-		// Get cfg DBI
-		cfgDBI, ok := db.GetDBis()[ConfigDBIName]
-		if !ok {
-			return fmt.Errorf("config DBI not found")
-		}
-
 		// Create Config with default values
-		cfg := defaultConfig()
+		cfg := types.DefaultConfig()
 
-		// Store config
-		if err := TxnMarshalAndPut(txn, cfgDBI, []byte(ConfigDataKey), cfg); err != nil {
+		// Store config (ConfigDBI is already cached at this point)
+		if err := TxnMarshalAndPut(txn, *ConfigDBI, []byte(ConfigDataKey), cfg); err != nil {
 			return fmt.Errorf("failed to store initial config: %w", err)
 		}
 
@@ -40,13 +35,9 @@ func Migrate(db *wrap.DB, logger *xlog.Logger) error {
 	*/
 
 	return db.Update(func(txn *lmdb.Txn) error {
-		// Get current version
-		cfgDBI, ok := db.GetDBis()[ConfigDBIName]
-		if !ok {
-			return fmt.Errorf("config DBI not found")
-		}
+		// Get current version (ConfigDBI is already cached at this point)
 		currentVer := ""
-		if err := TxnGetAndUnmarshal(txn, cfgDBI, []byte(ConfigVersionKey), &currentVer); err != nil {
+		if err := TxnGetAndUnmarshal(txn, *ConfigDBI, []byte(ConfigVersionKey), &currentVer); err != nil {
 			if !lmdb.IsNotFound(err) {
 				return fmt.Errorf("failed to get config version: %w", err)
 			}
@@ -60,7 +51,7 @@ func Migrate(db *wrap.DB, logger *xlog.Logger) error {
 		}
 
 		// Update version in DB
-		if err := TxnMarshalAndPut(txn, cfgDBI, []byte(ConfigVersionKey), newVer); err != nil {
+		if err := TxnMarshalAndPut(txn, *ConfigDBI, []byte(ConfigVersionKey), newVer); err != nil {
 			return fmt.Errorf("failed to update config version: %w", err)
 		}
 

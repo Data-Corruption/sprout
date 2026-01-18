@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sprout/internal/app"
-	"sprout/internal/platform/database"
+	"sprout/internal/platform/database/config"
 	"sprout/internal/platform/http/server"
 	"sprout/internal/platform/http/server/router"
+	"sprout/internal/types"
 	"time"
 
 	"github.com/Data-Corruption/stdx/xnet"
@@ -73,7 +74,7 @@ var Service = register(func(a *app.App) *cli.Command {
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					updated := false
 
-					if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+					if err := config.Update(a.DB, func(cfg *types.Configuration) error {
 						if cmd.IsSet("log") {
 							cfg.LogLevel = cmd.String("log")
 							updated = true
@@ -120,7 +121,7 @@ var Service = register(func(a *app.App) *cli.Command {
 					}
 
 					// get config
-					cfg, err := database.ViewConfig(a.DB)
+					cfg, err := config.View(a.DB)
 					if err != nil {
 						return fmt.Errorf("failed to get configuration from database: %w", err)
 					}

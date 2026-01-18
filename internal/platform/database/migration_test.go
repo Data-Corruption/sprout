@@ -2,6 +2,7 @@ package database
 
 import (
 	"path/filepath"
+	"sprout/internal/types"
 	"testing"
 
 	"github.com/Data-Corruption/lmdb-go/lmdb"
@@ -26,9 +27,14 @@ func TestMigrate(t *testing.T) {
 	// We want to test Migrate() explicitly, but database.New() calls it.
 	// So we'll use wrap.New() directly to get a raw DB, then call Migrate().
 	openRawDB := func() *wrap.DB {
-		db, _, err := wrap.New(dbPath, DBINameList)
+		db, _, err := wrap.New(dbPath, DBINameList())
 		if err != nil {
 			t.Fatalf("Failed to open raw DB: %v", err)
+		}
+		// Cache DBIs manually since we're bypassing database.New()
+		dbis := db.GetDBis()
+		for _, entry := range dbiRegistry {
+			*entry.handle = dbis[entry.name]
 		}
 		return db
 	}
@@ -43,21 +49,17 @@ func TestMigrate(t *testing.T) {
 		}
 
 		// Verify Config Exists
-		var cfg Configuration
+		var cfg types.Configuration
 		err := db.View(func(txn *lmdb.Txn) error {
-			dbi, ok := db.GetDBis()[ConfigDBIName]
-			if !ok {
-				t.Fatalf("Config DBI not found")
-			}
-			return TxnGetAndUnmarshal(txn, dbi, []byte(ConfigDataKey), &cfg)
+			return TxnGetAndUnmarshal(txn, *ConfigDBI, []byte(ConfigDataKey), &cfg)
 		})
 		if err != nil {
 			t.Fatalf("Failed to read config: %v", err)
 		}
 
 		// Verify Default Values
-		if cfg.Port != DefaultPort {
-			t.Errorf("Expected Port %d, got %d", DefaultPort, cfg.Port)
+		if cfg.Port != types.DefaultPort {
+			t.Errorf("Expected Port %d, got %d", types.DefaultPort, cfg.Port)
 		}
 		if cfg.LogLevel != "WARN" {
 			t.Errorf("Expected LogLevel WARN, got %s", cfg.LogLevel)
@@ -66,11 +68,7 @@ func TestMigrate(t *testing.T) {
 		// Verify Version
 		var version string
 		err = db.View(func(txn *lmdb.Txn) error {
-			dbi, ok := db.GetDBis()[ConfigDBIName]
-			if !ok {
-				t.Fatalf("Config DBI not found")
-			}
-			return TxnGetAndUnmarshal(txn, dbi, []byte(ConfigVersionKey), &version)
+			return TxnGetAndUnmarshal(txn, *ConfigDBI, []byte(ConfigVersionKey), &version)
 		})
 		if err != nil {
 			t.Fatalf("Failed to read version: %v", err)
@@ -92,11 +90,7 @@ func TestMigrate(t *testing.T) {
 		// Verify Version is still v1
 		var version string
 		err = db.View(func(txn *lmdb.Txn) error {
-			dbi, ok := db.GetDBis()[ConfigDBIName]
-			if !ok {
-				t.Fatalf("Config DBI not found")
-			}
-			return TxnGetAndUnmarshal(txn, dbi, []byte(ConfigVersionKey), &version)
+			return TxnGetAndUnmarshal(txn, *ConfigDBI, []byte(ConfigVersionKey), &version)
 		})
 		if err != nil {
 			t.Fatalf("Failed to read version: %v", err)

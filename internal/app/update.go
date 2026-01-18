@@ -9,7 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sprout/internal/platform/database"
+	"sprout/internal/platform/database/config"
+	"sprout/internal/types"
 	"sync"
 	"syscall"
 	"time"
@@ -31,7 +32,7 @@ var ErrDevBuild = &xhttp.Err{
 }
 
 // startAutoChecker starts a goroutine that checks for updates every [UpdateCheckInterval].
-func (a *App) startAutoChecker(currentCfgCopy *database.Configuration) error {
+func (a *App) startAutoChecker(currentCfgCopy *types.Configuration) error {
 	// if dev build, do nothing
 	if a.Version == "vX.X.X" {
 		return nil
@@ -77,7 +78,7 @@ func (a *App) startAutoChecker(currentCfgCopy *database.Configuration) error {
 
 		// check helper
 		check := func() {
-			cfg, err := database.ViewConfig(a.DB)
+			cfg, err := config.View(a.DB)
 			if err != nil {
 				a.Log.Errorf("failed to view config: %v", err)
 				return
@@ -139,7 +140,7 @@ func (a *App) CheckForUpdate() (bool, error) {
 	a.Log.Debugf("Latest version: %s, Current version: %s, Update available: %t", latest, a.Version, updateAvailable)
 
 	// update config
-	if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+	if err := config.Update(a.DB, func(cfg *types.Configuration) error {
 		cfg.UpdateAvailable = updateAvailable
 		cfg.LastUpdateCheck = time.Now()
 		return nil
@@ -218,7 +219,7 @@ func uPrep(version string, db *wrap.DB) error {
 		return ErrDevBuild
 	}
 	// set updateAvailable to false since we're updating
-	if err := database.UpdateConfig(db, func(cfg *database.Configuration) error {
+	if err := config.Update(db, func(cfg *types.Configuration) error {
 		cfg.UpdateAvailable = false
 		return nil
 	}); err != nil {

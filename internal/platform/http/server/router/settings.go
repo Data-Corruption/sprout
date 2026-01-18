@@ -8,7 +8,8 @@ import (
 	"net/http"
 	"os/exec"
 	"sprout/internal/app"
-	"sprout/internal/platform/database"
+	"sprout/internal/platform/database/config"
+	"sprout/internal/types"
 	"time"
 
 	"github.com/Data-Corruption/stdx/xhttp"
@@ -24,7 +25,7 @@ func settingsRoutes(a *app.App, r *chi.Mux) {
 
 	// serve settings page
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := database.ViewConfig(a.DB)
+		cfg, err := config.View(a.DB)
 		if err != nil {
 			xhttp.Error(r.Context(), w, err)
 			return
@@ -69,7 +70,7 @@ func settingsRoutes(a *app.App, r *chi.Mux) {
 			}
 
 			// Update only the fields that were provided
-			if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+			if err := config.Update(a.DB, func(cfg *types.Configuration) error {
 				if body.LogLevel != nil {
 					cfg.LogLevel = *body.LogLevel
 				}
@@ -147,7 +148,7 @@ func settingsRoutes(a *app.App, r *chi.Mux) {
 			a.Log.Debugf("Restart requested. Update: %t, DoUpdate: %t", body.Update, doUpdate)
 
 			// set StartCounter to 0 (post migrate restart will increment)
-			if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+			if err := config.Update(a.DB, func(cfg *types.Configuration) error {
 				cfg.StartCounter = 0
 				return nil
 			}); err != nil {
@@ -170,7 +171,7 @@ func settingsRoutes(a *app.App, r *chi.Mux) {
 		})
 
 		settings.Get("/restart-status", func(w http.ResponseWriter, r *http.Request) {
-			cfg, err := database.ViewConfig(a.DB)
+			cfg, err := config.View(a.DB)
 			if err != nil {
 				xhttp.Error(r.Context(), w, err)
 				return

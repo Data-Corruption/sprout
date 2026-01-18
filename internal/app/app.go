@@ -9,7 +9,9 @@ import (
 	"os/user"
 	"path/filepath"
 	"sprout/internal/platform/database"
+	"sprout/internal/platform/database/config"
 	"sprout/internal/platform/release"
+	"sprout/internal/types"
 	"sprout/pkg/x"
 	"strings"
 	"sync"
@@ -104,7 +106,7 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	a.AddCleanup(func() error {
 		// store PreUpdateVersion on shutdown, unless we are the migrator instance
 		if !cmd.Bool("migrate") {
-			if err := database.UpdateConfig(a.DB, func(cfg *database.Configuration) error {
+			if err := config.Update(a.DB, func(cfg *types.Configuration) error {
 				cfg.PreUpdateVersion = a.Version
 				return nil
 			}); err != nil {
@@ -117,7 +119,7 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	a.Log.Debug("Database initialized")
 
 	// get config
-	cfg, err := database.ViewConfig(a.DB)
+	cfg, err := config.View(a.DB)
 	if err != nil {
 		return ctx, fmt.Errorf("failed to view config: %w", err)
 	}
@@ -229,7 +231,7 @@ func getRuntimePath(appName string) (string, error) {
 	return filepath.Join("/tmp", appName+"-"+username), nil
 }
 
-func getBaseURL(cfg *database.Configuration) (string, error) {
+func getBaseURL(cfg *types.Configuration) (string, error) {
 	port := cfg.Port
 	host := cfg.Host
 	proxyPort := cfg.ProxyPort

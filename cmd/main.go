@@ -7,8 +7,8 @@ import (
 
 	"sprout/internal/app"
 	"sprout/internal/app/commands"
-	"sprout/internal/platform/database"
 	"sprout/internal/platform/release"
+	"sprout/internal/types"
 
 	"github.com/urfave/cli/v3"
 )
@@ -75,7 +75,7 @@ func main() {
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			if cmd.Bool("build-vars") {
 				fmt.Printf(`{"name":"%s","version":"%s","releaseURL":"%s","contactURL":"%s","serviceEnabled":"%s","defaultPort":%d}`+"\n",
-					name, version, releaseURL, contactURL, serviceEnabled, database.DefaultPort)
+					name, version, releaseURL, contactURL, serviceEnabled, types.DefaultPort)
 				os.Exit(0)
 			}
 			return app.Init(ctx, cmd)

@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"sprout/internal/app"
-	"sprout/internal/platform/database"
+	"sprout/internal/platform/database/config"
+	"sprout/internal/types"
 	"sprout/pkg/sdnotify"
 
 	"github.com/Data-Corruption/stdx/xhttp"
@@ -25,7 +26,7 @@ func New(app *app.App, port int, handler http.Handler) error {
 				app.Log.Warnf("sd_notify READY failed: %v", err)
 			}
 			// increment start counter
-			if err := database.UpdateConfig(app.DB, func(cfg *database.Configuration) error {
+			if err := config.Update(app.DB, func(cfg *types.Configuration) error {
 				cfg.StartCounter++
 				return nil
 			}); err != nil {
