@@ -156,7 +156,7 @@
                     <fieldset class="fieldset">
                         <legend class="fieldset-legend">Log Level</legend>
                         <div class="flex gap-2 items-center">
-                            <select id="settings-log-level" class="select select-bordered w-full">
+                            <select id="settings-log-level" class="select select-bordered w-full" aria-label="Log Level">
                                 <option value="debug" {{ if eq .LogLevel "debug" }}selected{{ end }}>Debug</option>
                                 <option value="info" {{ if eq .LogLevel "info" }}selected{{ end }}>Info</option>
                                 <option value="warn" {{ if eq .LogLevel "warn" }}selected{{ end }}>Warn</option>

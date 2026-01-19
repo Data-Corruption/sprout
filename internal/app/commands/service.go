@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sprout/internal/app"
 	"sprout/internal/platform/database/config"
+	"sprout/internal/platform/http/router"
 	"sprout/internal/platform/http/server"
-	"sprout/internal/platform/http/server/router"
 	"sprout/internal/types"
 	"time"
 
@@ -133,9 +133,6 @@ var Service = register(func(a *app.App) *cli.Command {
 					}
 
 					// create server
-					if err := router.LoadEmbedAssets(); err != nil {
-						return fmt.Errorf("failed to load embedded assets: %w", err)
-					}
 					mux := router.New(a)
 					if err := server.New(a, port, mux); err != nil {
 						return fmt.Errorf("failed to create server: %w", err)

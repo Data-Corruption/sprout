@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 	"sprout/internal/app"
+	"sprout/internal/platform/http/router/settings"
 	"strings"
 
 	"github.com/Data-Corruption/stdx/xlog"
@@ -25,12 +26,12 @@ func New(a *app.App) *chi.Mux {
 	}
 	r.Use(securityHeaders)
 
-	// serve settings page / routes
-	settingsRoutes(a, r)
-
 	// serve embedded assets with cache busting
-	r.Get(CSS.Path(), CSS.Handler())
-	r.Get(JS.Path(), JS.Handler())
+	r.Get(a.CSS.Path(), a.CSS.Handler())
+	r.Get(a.JS.Path(), a.JS.Handler())
+
+	// serve settings page / routes
+	settings.Register(a, r)
 
 	return r
 }

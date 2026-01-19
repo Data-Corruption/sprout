@@ -28,8 +28,8 @@ TAILWIND_VERSION="${TAILWIND_VERSION:-v4.1.18}"
 DAISYUI_VERSION="${DAISYUI_VERSION:-v5.5.14}"
 
 BIN_DIR="bin"
-JS_DIR="./internal/platform/http/server/router/js"
-CSS_DIR="./internal/platform/http/server/router/css"
+JS_DIR="./internal/ui/assets/js"
+CSS_DIR="./internal/ui/assets/css"
 GO_MAIN_PATH="./cmd"
 
 NO_CACHE='Cache-Control: no-store, max-age=0, must-revalidate' # unneeded with cache rule but just in case

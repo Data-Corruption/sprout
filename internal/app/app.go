@@ -12,6 +12,8 @@ import (
 	"sprout/internal/platform/database/config"
 	"sprout/internal/platform/release"
 	"sprout/internal/types"
+	"sprout/internal/ui"
+	"sprout/pkg/asset"
 	"sprout/pkg/x"
 	"strings"
 	"sync"
@@ -51,8 +53,12 @@ type App struct {
 	RuntimeDir    string // (e.g., XDG_RUNTIME_DIR/<Name>, fallback to /tmp/<Name>-USER)
 	TempDir       string // (e.g., StorageDir/tmp)
 	ReleaseSource release.ReleaseSource
+	// frontend
+	Templates *ui.Templates
+	CSS, JS   *asset.Asset
 
 	// lifecycle management
+
 	cleanup       []CleanupFunc
 	cleanupOnce   sync.Once
 	postCleanup   CleanupFunc
@@ -151,6 +157,14 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 
 	// store context for use in update checking, etc.
 	a.Context = ctx
+
+	// load frontend templates and assets
+	if a.Templates, err = ui.NewTemplates(); err != nil {
+		return ctx, fmt.Errorf("failed to load templates: %w", err)
+	}
+	if a.CSS, a.JS, err = ui.LoadEmbedAssets(); err != nil {
+		return ctx, fmt.Errorf("failed to load frontend assets: %w", err)
+	}
 
 	// update checking
 	if err := a.startAutoChecker(cfg); err != nil {
