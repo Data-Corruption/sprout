@@ -32,8 +32,8 @@ func handleGetSettings(a *app.App) http.HandlerFunc {
 		}
 
 		data := map[string]any{
-			"CSS":             a.CSS.Path(),
-			"JS":              a.JS.Path(),
+			"CSS":             a.UI.CSS.Path(),
+			"JS":              a.UI.JS.Path(),
 			"Favicon":         template.URL(`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='.9em' font-size='90' text-anchor='middle'>🌱</text></svg>`),
 			"Title":           "Settings",
 			"Version":         a.Version,
@@ -44,7 +44,7 @@ func handleGetSettings(a *app.App) http.HandlerFunc {
 			"Host":      cfg.Host,
 			"ProxyPort": cfg.ProxyPort,
 		}
-		if err := a.Templates.Execute(w, "settings.html", data); err != nil {
+		if err := a.UI.Execute(w, "settings.html", data); err != nil {
 			xhttp.Error(r.Context(), w, err)
 			return
 		}

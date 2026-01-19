@@ -27,8 +27,8 @@ func New(a *app.App) *chi.Mux {
 	r.Use(securityHeaders)
 
 	// serve embedded assets with cache busting
-	r.Get(a.CSS.Path(), a.CSS.Handler())
-	r.Get(a.JS.Path(), a.JS.Handler())
+	r.Get(a.UI.CSS.Path(), a.UI.CSS.Handler())
+	r.Get(a.UI.JS.Path(), a.UI.JS.Handler())
 
 	// serve settings page / routes
 	settings.Register(a, r)

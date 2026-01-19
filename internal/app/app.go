@@ -13,7 +13,6 @@ import (
 	"sprout/internal/platform/release"
 	"sprout/internal/types"
 	"sprout/internal/ui"
-	"sprout/pkg/asset"
 	"sprout/pkg/x"
 	"strings"
 	"sync"
@@ -47,15 +46,13 @@ type App struct {
 	DB            *wrap.DB
 	Log           *xlog.Logger
 	Server        *xhttp.Server
+	UI            *ui.UI
 	BaseURL       string // e.g., "https://example.com"
 	UserAgent     string // e.g., "Mozilla/5.0 (compatible; <Name>/1.2.3; +<ContactURL>)"
 	StorageDir    string // (e.g., ~/.<Name>)
 	RuntimeDir    string // (e.g., XDG_RUNTIME_DIR/<Name>, fallback to /tmp/<Name>-USER)
 	TempDir       string // (e.g., StorageDir/tmp)
 	ReleaseSource release.ReleaseSource
-	// frontend
-	Templates *ui.Templates
-	CSS, JS   *asset.Asset
 
 	// lifecycle management
 
@@ -158,12 +155,9 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	// store context for use in update checking, etc.
 	a.Context = ctx
 
-	// load frontend templates and assets
-	if a.Templates, err = ui.NewTemplates(); err != nil {
-		return ctx, fmt.Errorf("failed to load templates: %w", err)
-	}
-	if a.CSS, a.JS, err = ui.LoadEmbedAssets(); err != nil {
-		return ctx, fmt.Errorf("failed to load frontend assets: %w", err)
+	// load frontend
+	if a.UI, err = ui.New(); err != nil {
+		return ctx, fmt.Errorf("failed to load UI: %w", err)
 	}
 
 	// update checking
