@@ -22,7 +22,7 @@ Sprout provides a unified architecture for building production-ready command-lin
 - **Daemon Mode**: Optional systemd-managed background service capability.
 - **Atomic State**: Shared LMDB database for reliable configuration/state across Daemon and CLI processes.
 - **CI/CD Ready**: Automated, changelog-driven release pipeline via Forgejo Actions.
-- **Cross-Platform**: Easy installation and support for Linux and Windows (WSL).
+- ***Cross-Platform**: Easy installation and support for Linux and Windows via WSL.
 
 ## Architecture
 
