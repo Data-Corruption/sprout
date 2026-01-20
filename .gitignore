@@ -3,7 +3,9 @@ esbuild
 tailwindcss
 
 *output.css
+*output.js
 *daisyui.mjs
 *daisyui-theme.mjs
+manifest.json
 
 bin/

@@ -187,7 +187,23 @@ sprout/
 ### Adding New Features
 
 #### New CLI Command
-wip
+1. Create `internal/app/commands/mycommand.go`
+2. Use the self-registering pattern:
+   ```go
+   var MyCommand = register(func(a *app.App) *cli.Command {
+       return &cli.Command{
+           Name:  "mycommand",
+           Usage: "does something cool",
+           Action: func(ctx context.Context, cmd *cli.Command) error {
+               // your logic here, you have access to `a` (the App)
+               return nil
+           },
+       }
+   })
+   ```
+3. The `register()` call automatically adds your command to the registry — no manual list editing needed.
+
+> The MyCommand var you create doesn't get used actually, i just prefer this pattern over using init().
 
 #### New HTTP Route
 1. Create a new package under `internal/platform/http/router/myroute/`
@@ -218,7 +234,23 @@ wip
    ```
 
 #### New Frontend Assets
-wip
+
+**Static files (images, fonts, etc.):**
+1. Add files to `internal/ui/assets/` (any subdirectory)
+2. In templates, access via `a.UI.Assets["path/to/file.png"].URLPath` for the cache busted URL
+3. Files are served at `/assets/*` with 1-year immutable cache headers
+
+**Styling (TailwindCSS + DaisyUI):**
+1. Edit `internal/ui/assets/css/input.css` (Tailwind source)
+2. Use DaisyUI components and Tailwind utilities in your HTML templates / any other files you add
+
+**JavaScript:**
+The js files are bundled via esbuild. To add new files:
+1. Add modules to `internal/ui/assets/js/src/`
+2. Import from `main.js` (the entry point)
+
+> [!NOTE]
+> When the app is built, the files are hashed and added to `internal/ui/assets/manifest.json`, then embedded in the binary. Proper automatic build time cache busting <3
 
 ## Security
 

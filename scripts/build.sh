@@ -166,6 +166,63 @@ frontend_build() {
   run_step "JavaScript bundled" "JavaScript bundling failed" ./esbuild "$JS_DIR/src/main.js" --bundle --minify --outfile="$JS_DIR/output.js"
 }
 
+hash_assets() {
+  local assets_dir="./internal/ui/assets"
+  local manifest="$assets_dir/manifest.json"
+  
+  # Patterns to ignore (matched against relative path from assets/)
+  local ignore_patterns=(
+    "css/input.css"
+    "css/daisyui.mjs"
+    "css/daisyui-theme.mjs"
+    "js/src/*"
+    "manifest.json"
+  )
+  
+  is_ignored() {
+    local file="$1"
+    for pattern in "${ignore_patterns[@]}"; do
+      # shellcheck disable=SC2053
+      if [[ "$file" == $pattern ]]; then
+        return 0
+      fi
+    done
+    return 1
+  }
+  
+  # Build manifest as JSON
+  local first=true
+  printf '{' > "$manifest"
+  
+  while IFS= read -r -d '' file; do
+    # Get relative path from assets dir
+    local rel_path="${file#$assets_dir/}"
+    
+    # Skip ignored files
+    if is_ignored "$rel_path"; then
+      continue
+    fi
+    
+    # Compute hash (first 16 chars of SHA256)
+    local hash
+    hash=$(sha256sum "$file" | cut -c1-16)
+    
+    # Add comma before all but first entry
+    if $first; then
+      first=false
+    else
+      printf ','
+    fi >> "$manifest"
+    
+    # Write JSON entry
+    printf '"%s":"%s"' "$rel_path" "$hash" >> "$manifest"
+  done < <(find "$assets_dir" -type f -print0 | sort -z)
+  
+  printf '}' >> "$manifest"
+  
+  printf '🟢 Generated asset manifest\n'
+}
+
 tests() {
   run_step "Tests passed" "Tests failed" go test -race ./...
 }
@@ -244,6 +301,7 @@ main() {
   # pre-build here (e.g., code generation, linting)
 
   frontend_build
+  hash_assets
   tests
 
   # build here (e.g., additional binaries, platforms)

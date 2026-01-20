@@ -32,8 +32,8 @@ func handleGetSettings(a *app.App) http.HandlerFunc {
 		}
 
 		data := map[string]any{
-			"CSS":             a.UI.CSS.Path(),
-			"JS":              a.UI.JS.Path(),
+			"CSS":             a.UI.CSS.URLPath,
+			"JS":              a.UI.JS.URLPath,
 			"Favicon":         template.URL(`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='.9em' font-size='90' text-anchor='middle'>🌱</text></svg>`),
 			"Title":           "Settings",
 			"Version":         a.BuildInfo().Version,
