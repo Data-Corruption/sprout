@@ -4,7 +4,7 @@
 # Requires: curl, gzip, mktemp, install, sha256sum, sed, awk, (and systemd if SERVICE=true)
 # Example: curl -fsSL https://cd.example.com/release/install.sh | sh
 
-# print logo, i made this with https://manytools.org/hacker-tools/ascii-banner/
+# print logo, i made this with https://manytools.org/hacker-tools/ascii-banner/ <3
 cat << 'EOF'
  ______     ______   ______     ______     __  __     ______  
 /\  ___\   /\  == \ /\  == \   /\  __ \   /\ \/\ \   /\__  _\ 

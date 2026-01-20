@@ -48,8 +48,8 @@ func Info() BuildInfo {
 	}
 	logLevel := defaultLogLevel
 	if logLevel == "" {
-		// fallback to WARN
-		logLevel = "WARN"
+		// fallback to DEBUG
+		logLevel = "DEBUG"
 	}
 	return BuildInfo{
 		Name:               name,

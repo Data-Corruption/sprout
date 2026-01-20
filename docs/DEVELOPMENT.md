@@ -213,7 +213,7 @@ Now back in the main dashboard, select **Storage & databases → R2 object stora
 - Default Storage Class: `Standard`
 
 After creation, **Bucket Settings → Custom Domains → Add**:  
-`YOUR-APP-cd.yourdomain.com`
+`cd.yourdomain.com`
 
 In **R2 object storage → Overview** on the right under Account Details, click **{}Manage** API Tokens. Kinda easy to miss. **Create User API Token**:
 - Token Name: `YOUR-APP CD`
@@ -235,20 +235,20 @@ Open your repository, **Settings → Actions → Secrets** Add the following sec
 
 ### 6. Clone your new repository  
 ```sh
-   git clone https://codeberg.org/YOUR_USERNAME/YOUR_REPO.git
-   cd YOUR_REPO
-   ```
+  git clone https://codeberg.org/YOUR_USERNAME/YOUR_REPO.git
+  cd YOUR_REPO
+```
 
 ### 7. Configure the Template  
 All configuration is done at the top of `scripts/build.sh`:
 - `APP_NAME`: Your application name (binary name).
-- `RELEASE_URL`: URL to your release bucket, e.g. `https://sprout-cd.regfile.net/release/`.
-- `CONTACT_URL`: This is used in the User-Agent. In the default state it's unused, but it's a good idea to add it to req headers made by your app. Your apps landing page or repo URL is fine.
+- `RELEASE_URL`: URL to your release bucket, e.g. `https://cd.yourdomain.com/release/`.
+- `CONTACT_URL`: This is used in the User-Agent. It's currently unused, but if you start making requests to other services it's a good idea to add it to the request headers. Your apps landing page or repo URL is fine.
+- `DEFAULT_LOG_LEVEL`: The default log level (e.g. `debug`, `info`, `warn`, `error`).
 - `SERVICE`: Set to "true" or "false" to enable/disable the daemon.
 - `SERVICE_DESC`: Description for the systemd service.
 - `SERVICE_ARGS`: Arguments to pass to the binary when running as a daemon. Unless you have a specific reason, leave this as `service run`.
-
-Also i lied about it all being in the build file, you can configure the default port (8383) the service uses in `internal/platform/database/types.go`.
+- `SERVICE_DEFAULT_PORT`: The default port the service listens on (e.g. `8484`).
 
 ### 8. **Build the project**:  
    ```sh
