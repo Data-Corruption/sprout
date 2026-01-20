@@ -17,10 +17,12 @@ umask 022
 APP_NAME="sprout"
 RELEASE_URL="https://cd.example.com/release/"
 CONTACT_URL="https://codeberg.org/DataCorruption/Sprout"
+DEFAULT_LOG_LEVEL="warn"
 
 SERVICE="true"
 SERVICE_DESC="Sprout daemon"
 SERVICE_ARGS="service run"
+SERVICE_DEFAULT_PORT="8484"
 
 # -----------------------------------------------------------------------------
 
@@ -62,11 +64,16 @@ download_file() {
 
 # check_var "key" "expected"
 # Verifies a build variable matches the expected value.
+# Handles both string values ("key":"value") and non-string values (key:value or key:true).
 check_var() {
   local key="$1"
   local expected="$2"
   local actual
-  actual=$(echo "$BUILD_VARS" | grep -o "\"$key\":\"[^\"]*\"" | cut -d'"' -f4)
+  # Try string value first, then non-string (bool/number)
+  actual=$(echo "$BUILD_VARS" | grep -oP "\"$key\":\"[^\"]*\"" | cut -d'"' -f4) || true
+  if [[ -z "$actual" ]]; then
+    actual=$(echo "$BUILD_VARS" | grep -oP "\"$key\":[^,}]+" | cut -d':' -f2)
+  fi
   if [[ "$actual" != "$expected" ]]; then
     echo "🔴 Error: $key mismatch. Expected '$expected', got '$actual'"
     exit 1
@@ -164,7 +171,16 @@ tests() {
 }
 
 go_build() {
-  local ldflags="-X 'main.version=$VERSION' -X 'main.name=$APP_NAME' -X 'main.releaseURL=$RELEASE_URL' -X 'main.contactURL=$CONTACT_URL' -X 'main.serviceEnabled=$SERVICE'"
+  local pkg="sprout/internal/build"
+  local ldflags="-X '${pkg}.name=$APP_NAME'"
+  ldflags+=" -X '${pkg}.version=$VERSION'"
+  ldflags+=" -X '${pkg}.releaseURL=$RELEASE_URL'"
+  ldflags+=" -X '${pkg}.contactURL=$CONTACT_URL'"
+  ldflags+=" -X '${pkg}.defaultLogLevel=$DEFAULT_LOG_LEVEL'"
+  ldflags+=" -X '${pkg}.serviceEnabled=$SERVICE'"
+  ldflags+=" -X '${pkg}.serviceDesc=$SERVICE_DESC'"
+  ldflags+=" -X '${pkg}.serviceArgs=$SERVICE_ARGS'"
+  ldflags+=" -X '${pkg}.serviceDefaultPort=$SERVICE_DEFAULT_PORT'"
   BUILD_OUT="$BIN_DIR/linux-amd64"
   
   GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -trimpath -buildvcs=false -ldflags="$ldflags" -o "$BUILD_OUT" "$GO_MAIN_PATH"
@@ -182,7 +198,11 @@ verify_build() {
   check_var "version" "$VERSION"
   check_var "releaseURL" "$RELEASE_URL"
   check_var "contactURL" "$CONTACT_URL"
+  check_var "defaultLogLevel" "$DEFAULT_LOG_LEVEL"
   check_var "serviceEnabled" "$SERVICE"
+  check_var "serviceDesc" "$SERVICE_DESC"
+  check_var "serviceArgs" "$SERVICE_ARGS"
+  check_var "serviceDefaultPort" "$SERVICE_DEFAULT_PORT"
 
   printf "🟢 Build variables verified\n"
 }

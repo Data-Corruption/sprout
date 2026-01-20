@@ -19,7 +19,7 @@ const (
 )
 
 var Service = register(func(a *app.App) *cli.Command {
-	if !a.ServiceEnabled {
+	if !a.BuildInfo().ServiceEnabled {
 		return nil
 	}
 	return &cli.Command{
@@ -27,11 +27,11 @@ var Service = register(func(a *app.App) *cli.Command {
 		Usage: "service management commands",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			// get service name / env file path
-			if a.Name == "" || a.StorageDir == "" {
+			if a.BuildInfo().Name == "" || a.StorageDir == "" {
 				return fmt.Errorf("app name or storage path not found")
 			}
-			serviceName := a.Name + ".service"
-			envFilePath := fmt.Sprintf("%s/%s.env", a.StorageDir, a.Name)
+			serviceName := a.BuildInfo().Name + ".service"
+			envFilePath := fmt.Sprintf("%s/%s.env", a.StorageDir, a.BuildInfo().Name)
 
 			// print service management commands
 			fmt.Printf("🖧 Service Cheat Sheet\n\n")
@@ -45,7 +45,7 @@ var Service = register(func(a *app.App) *cli.Command {
 			fmt.Printf("    Env:     edit %s then restart the service\n\n", envFilePath)
 			fmt.Printf("    Logs:        journalctl --user -u %s -n 200 --no-pager\n", serviceName)
 			fmt.Printf("    Stop Logs:   journalctl --user -u %s-stop* -n 200 --no-pager\n", serviceName)
-			fmt.Printf("    Update Logs: journalctl --user -u %s-update* -n 200 -f\n", a.Name)
+			fmt.Printf("    Update Logs: journalctl --user -u %s-update* -n 200 -f\n", a.BuildInfo().Name)
 
 			return nil
 		},

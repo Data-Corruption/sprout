@@ -7,31 +7,13 @@ import (
 
 	"sprout/internal/app"
 	"sprout/internal/app/commands"
-	"sprout/internal/platform/release"
-	"sprout/internal/types"
+	"sprout/internal/build"
 
 	"github.com/urfave/cli/v3"
 )
 
-const defaultLogLevel = "warn"
-
-// set by build script
-var (
-	name           string
-	version        string
-	releaseURL     string
-	contactURL     string
-	serviceEnabled string
-)
-
 func main() {
-	app := &app.App{
-		Name:           name,
-		Version:        version,
-		ReleaseURL:     releaseURL,
-		ServiceEnabled: serviceEnabled == "true",
-		ReleaseSource:  &release.GenericReleaseSource{},
-	}
+	app := app.New(build.Info())
 	defer app.Close()
 
 	var subCommands []*cli.Command
@@ -40,14 +22,14 @@ func main() {
 	}
 
 	rootCommand := &cli.Command{
-		Name:    name,
-		Version: version,
+		Name:    app.BuildInfo().Name,
+		Version: app.BuildInfo().Version,
 		Usage:   "Sprout is a template for building Go services / cli apps.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "log",
 				Aliases: []string{"l"},
-				Value:   defaultLogLevel,
+				Value:   app.BuildInfo().DefaultLogLevel,
 				Usage:   "override log level (debug|info|warn|error|none)",
 			},
 			&cli.BoolFlag{
@@ -74,16 +56,15 @@ func main() {
 		},
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			if cmd.Bool("build-vars") {
-				fmt.Printf(`{"name":"%s","version":"%s","releaseURL":"%s","contactURL":"%s","serviceEnabled":"%s","defaultPort":%d}`+"\n",
-					name, version, releaseURL, contactURL, serviceEnabled, types.DefaultPort)
+				fmt.Println(app.BuildInfo().PrintJSON())
 				os.Exit(0)
 			}
 			return app.Init(ctx, cmd)
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			app.Log.Info("Ran with no arguments.")
-			fmt.Printf("%s version %s\n", name, version)
-			fmt.Printf("Use '%s help' to see available commands.\n", name)
+			fmt.Printf("%s version %s\n", app.BuildInfo().Name, app.BuildInfo().Version)
+			fmt.Printf("Use '%s help' to see available commands.\n", app.BuildInfo().Name)
 			return nil
 		},
 		Commands: subCommands,

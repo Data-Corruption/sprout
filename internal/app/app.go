@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sprout/internal/build"
 	"sprout/internal/platform/database"
 	"sprout/internal/platform/database/config"
 	"sprout/internal/platform/release"
@@ -37,10 +38,6 @@ It provides:
   - update handlers and migration synchronization
 */
 type App struct {
-	// build-time variables
-	Name, Version, ReleaseURL, ContactURL string
-	ServiceEnabled                        bool
-
 	// injected services, etc.
 
 	DB            *wrap.DB
@@ -53,6 +50,7 @@ type App struct {
 	RuntimeDir    string // (e.g., XDG_RUNTIME_DIR/<Name>, fallback to /tmp/<Name>-USER)
 	TempDir       string // (e.g., StorageDir/tmp)
 	ReleaseSource release.ReleaseSource
+	buildInfo     build.BuildInfo // read-only
 
 	// lifecycle management
 
@@ -67,13 +65,23 @@ type App struct {
 	Context context.Context
 }
 
+func New(buildInfo build.BuildInfo) *App {
+	return &App{
+		buildInfo: buildInfo,
+	}
+}
+
+func (a *App) BuildInfo() build.BuildInfo {
+	return a.buildInfo
+}
+
 func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 	// paths
 	var err error
-	if a.StorageDir, err = getStoragePath(a.Name); err != nil {
+	if a.StorageDir, err = getStoragePath(a.buildInfo.Name); err != nil {
 		return nil, err
 	}
-	if a.RuntimeDir, err = getRuntimePath(a.Name); err != nil {
+	if a.RuntimeDir, err = getRuntimePath(a.buildInfo.Name); err != nil {
 		return nil, err
 	}
 	a.TempDir = filepath.Join(a.StorageDir, "tmp")
@@ -88,7 +96,7 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 		}
 	} else {
 		// migrate flag set, we are the migrator instance, proceed without guard
-		fmt.Printf("%s version %s\n", a.Name, a.Version)
+		fmt.Printf("%s version %s\n", a.buildInfo.Name, a.buildInfo.Version)
 	}
 
 	// logger
@@ -100,7 +108,7 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	a.AddCleanup(a.Log.Close)
 
 	a.Log.Debugf("Starting %s, version: %s, storage path: %s, runtime path: %s",
-		a.Name, a.Version, a.StorageDir, a.RuntimeDir)
+		a.buildInfo.Name, a.buildInfo.Version, a.StorageDir, a.RuntimeDir)
 
 	// database
 	if a.DB, err = database.New(filepath.Join(a.StorageDir, "db"), a.Log); err != nil {
@@ -110,7 +118,7 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 		// store PreUpdateVersion on shutdown, unless we are the migrator instance
 		if !cmd.Bool("migrate") {
 			if err := config.Update(a.DB, func(cfg *types.Configuration) error {
-				cfg.PreUpdateVersion = a.Version
+				cfg.PreUpdateVersion = a.buildInfo.Version
 				return nil
 			}); err != nil {
 				a.Log.Errorf("failed to set PreUpdateVersion on shutdown: %v", err)
@@ -140,8 +148,8 @@ func (a *App) Init(ctx context.Context, cmd *cli.Command) (context.Context, erro
 	a.Log.Debugf("Base URL: %s", a.BaseURL)
 
 	// set UserAgent
-	mmVer := strings.TrimPrefix(semver.MajorMinor(a.Version), "v")
-	a.UserAgent = fmt.Sprintf("Mozilla/5.0 (compatible; %s/%s; +%s)", a.Name, mmVer, a.ContactURL)
+	mmVer := strings.TrimPrefix(semver.MajorMinor(a.buildInfo.Version), "v")
+	a.UserAgent = fmt.Sprintf("Mozilla/5.0 (compatible; %s/%s; +%s)", a.buildInfo.Name, mmVer, a.buildInfo.ContactURL)
 
 	// set log level
 	if !logOverride {

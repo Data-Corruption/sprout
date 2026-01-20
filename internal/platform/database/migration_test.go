@@ -2,6 +2,7 @@ package database
 
 import (
 	"path/filepath"
+	"sprout/internal/build"
 	"sprout/internal/types"
 	"testing"
 
@@ -57,9 +58,11 @@ func TestMigrate(t *testing.T) {
 			t.Fatalf("Failed to read config: %v", err)
 		}
 
+		bi := build.Info()
+
 		// Verify Default Values
-		if cfg.Port != types.DefaultPort {
-			t.Errorf("Expected Port %d, got %d", types.DefaultPort, cfg.Port)
+		if cfg.Port != bi.ServiceDefaultPort {
+			t.Errorf("Expected Port %d, got %d", bi.ServiceDefaultPort, cfg.Port)
 		}
 		if cfg.LogLevel != "WARN" {
 			t.Errorf("Expected LogLevel WARN, got %s", cfg.LogLevel)

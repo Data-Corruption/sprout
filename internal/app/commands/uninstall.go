@@ -20,7 +20,7 @@ var Uninstall = register(func(a *app.App) *cli.Command {
 		Usage: "uninstall the app",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			// confirmation
-			msg := fmt.Sprintf("Are you sure you want to uninstall %s? This will delete all data and the application binary.", a.Name)
+			msg := fmt.Sprintf("Are you sure you want to uninstall %s? This will delete all data and the application binary.", a.BuildInfo().Name)
 			if yes, err := prompt.YesNo(msg); err != nil {
 				return fmt.Errorf("prompt failed: %w", err)
 			} else if !yes {
@@ -29,7 +29,7 @@ var Uninstall = register(func(a *app.App) *cli.Command {
 			}
 
 			// prepare paths
-			serviceName := a.Name + ".service"
+			serviceName := a.BuildInfo().Name + ".service"
 			home, err := x.GetUserHomeDir()
 			if err != nil {
 				return fmt.Errorf("failed to get user home dir: %w", err)
@@ -46,7 +46,7 @@ var Uninstall = register(func(a *app.App) *cli.Command {
 			// schedule cleanup
 			a.SetPostCleanup(func() error {
 				// stop / disable service
-				if a.ServiceEnabled {
+				if a.BuildInfo().ServiceEnabled {
 					fmt.Println("Stopping service...")
 					ctxStop, cancelStop := context.WithTimeout(context.Background(), 30*time.Second)
 					defer cancelStop()

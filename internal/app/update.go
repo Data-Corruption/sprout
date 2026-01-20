@@ -34,7 +34,7 @@ var ErrDevBuild = &xhttp.Err{
 // startAutoChecker starts a goroutine that checks for updates every [UpdateCheckInterval].
 func (a *App) startAutoChecker(currentCfgCopy *types.Configuration) error {
 	// if dev build, do nothing
-	if a.Version == "vX.X.X" {
+	if a.buildInfo.Version == "vX.X.X" {
 		return nil
 	}
 
@@ -121,23 +121,23 @@ func (a *App) startAutoChecker(currentCfgCopy *types.Configuration) error {
 // It returns true if an update is available, false otherwise.
 // When running a dev build (e.g. with `vX.X.X`), it returns false without checking.
 func (a *App) CheckForUpdate() (bool, error) {
-	if a.Version == "" {
+	if a.buildInfo.Version == "" {
 		return false, fmt.Errorf("failed to get appVersion from context")
 	}
-	if a.Version == "vX.X.X" {
+	if a.buildInfo.Version == "vX.X.X" {
 		return false, ErrDevBuild
 	}
 
 	lCtx, lCancel := context.WithTimeout(a.Context, 8*time.Second)
 	defer lCancel()
 
-	latest, err := a.ReleaseSource.GetLatestVersion(lCtx, a.ReleaseURL)
+	latest, err := a.ReleaseSource.GetLatestVersion(lCtx, a.buildInfo.ReleaseURL)
 	if err != nil {
 		return false, err
 	}
 
-	updateAvailable := semver.Compare(latest, a.Version) > 0
-	a.Log.Debugf("Latest version: %s, Current version: %s, Update available: %t", latest, a.Version, updateAvailable)
+	updateAvailable := semver.Compare(latest, a.buildInfo.Version) > 0
+	a.Log.Debugf("Latest version: %s, Current version: %s, Update available: %t", latest, a.buildInfo.Version, updateAvailable)
 
 	// update config
 	if err := config.Update(a.DB, func(cfg *types.Configuration) error {
@@ -159,13 +159,13 @@ func (a *App) CheckForUpdate() (bool, error) {
 func (a *App) DeferUpdate() error {
 	var rErr error
 	a.uOnce.Do(func() {
-		if err := uPrep(a.Version, a.DB); err != nil {
+		if err := uPrep(a.buildInfo.Version, a.DB); err != nil {
 			rErr = err
 			return
 		}
 
 		// prepare update command
-		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.ReleaseURL+"install.sh")
+		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.buildInfo.ReleaseURL+"install.sh")
 		a.Log.Debugf("Prepared update, command: %s", pipeline)
 
 		a.SetPostCleanup(func() error {
@@ -188,19 +188,19 @@ func (a *App) DeferUpdate() error {
 func (a *App) DetachUpdate() error {
 	var rErr error
 	a.uOnce.Do(func() {
-		if err := uPrep(a.Version, a.DB); err != nil {
+		if err := uPrep(a.buildInfo.Version, a.DB); err != nil {
 			rErr = err
 			return
 		}
 
 		// prepare update command
-		name := a.Name
-		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.ReleaseURL+"install.sh")
+		name := a.buildInfo.Name
+		pipeline := fmt.Sprintf("curl -sSfL %s | sh", a.buildInfo.ReleaseURL+"install.sh")
 		logPath := filepath.Join(a.StorageDir, "update.log")
 		a.Log.Debugf("Prepared detached update: command: %s, logPath: %s", pipeline, logPath)
 
 		// run update (install/update script will close this process)
-		if err := runUpdateDetached(a.ServiceEnabled, name, pipeline, logPath); err != nil {
+		if err := runUpdateDetached(a.buildInfo.ServiceEnabled, name, pipeline, logPath); err != nil {
 			rErr = err
 			return
 		}

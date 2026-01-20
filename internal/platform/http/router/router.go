@@ -21,7 +21,7 @@ func New(a *app.App) *chi.Mux {
 	})
 
 	// basic security hardening
-	if a.Version != "vX.X.X" && strings.HasPrefix(a.BaseURL, "https://") {
+	if a.BuildInfo().Version != "vX.X.X" && strings.HasPrefix(a.BaseURL, "https://") {
 		r.Use(httpsRedirect)
 	}
 	r.Use(securityHeaders)

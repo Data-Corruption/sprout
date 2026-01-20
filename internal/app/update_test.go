@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sprout/internal/build"
 	"sprout/internal/platform/database"
 	"sprout/internal/platform/database/config"
 	"testing"
@@ -90,16 +91,18 @@ func TestCheckForUpdate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup App with Mock
+			bi := build.Info()
+			bi.Version = tt.currentVersion
+			bi.ReleaseURL = "https://download.example-app.com/release/"
 			app := &App{
-				Version:    tt.currentVersion,
-				ReleaseURL: "https://download.example-app.com/release/",
-				DB:         db,
-				Log:        logger,
+				DB:  db,
+				Log: logger,
 				ReleaseSource: &MockReleaseSource{
 					LatestVersion: tt.latestVersion,
 					Error:         tt.mockError,
 				},
-				Context: context.Background(),
+				buildInfo: bi,
+				Context:   context.Background(),
 			}
 
 			// Run CheckForUpdate

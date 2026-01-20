@@ -36,8 +36,8 @@ func handleGetSettings(a *app.App) http.HandlerFunc {
 			"JS":              a.UI.JS.Path(),
 			"Favicon":         template.URL(`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%' y='.9em' font-size='90' text-anchor='middle'>🌱</text></svg>`),
 			"Title":           "Settings",
-			"Version":         a.Version,
-			"UpdateAvailable": cfg.UpdateAvailable && (a.Version != "vX.X.X"),
+			"Version":         a.BuildInfo().Version,
+			"UpdateAvailable": cfg.UpdateAvailable && (a.BuildInfo().Version != "vX.X.X"),
 			//  config fields
 			"LogLevel":  cfg.LogLevel,
 			"Port":      cfg.Port,
@@ -97,13 +97,13 @@ func handleStop(a *app.App) http.HandlerFunc {
 		defer r.Body.Close()
 		w.WriteHeader(http.StatusAccepted)
 
-		if a.ServiceEnabled && a.Version != "vX.X.X" {
+		if a.BuildInfo().ServiceEnabled && a.BuildInfo().Version != "vX.X.X" {
 			// Use systemd-run to create a transient unit that survives our process dying.
 			// This ensures the stop command completes and logs reliably.
 			go func() {
-				serviceName := a.Name + ".service"
-				unitName := fmt.Sprintf("%s-stop-%s", a.Name, time.Now().Format("20060102-150405"))
-				syslogIdent := fmt.Sprintf("SyslogIdentifier=%s-stop", a.Name)
+				serviceName := a.BuildInfo().Name + ".service"
+				unitName := fmt.Sprintf("%s-stop-%s", a.BuildInfo().Name, time.Now().Format("20060102-150405"))
+				syslogIdent := fmt.Sprintf("SyslogIdentifier=%s-stop", a.BuildInfo().Name)
 
 				cmd := exec.CommandContext(
 					a.Context,
@@ -143,7 +143,7 @@ func handleRestart(a *app.App) http.HandlerFunc {
 
 		// skip update if dev build
 		var doUpdate bool
-		if body.Update && a.Version != "vX.X.X" {
+		if body.Update && a.BuildInfo().Version != "vX.X.X" {
 			doUpdate = true
 		}
 
@@ -182,10 +182,10 @@ func handleRestartStatus(a *app.App) http.HandlerFunc {
 		}
 
 		restarted := cfg.StartCounter > 0
-		updated := cfg.PreUpdateVersion != "" && cfg.PreUpdateVersion != a.Version
+		updated := cfg.PreUpdateVersion != "" && cfg.PreUpdateVersion != a.BuildInfo().Version
 
 		a.Log.Debugf("Restart status check: StartCounter=%d, PreUpdateVersion=%q, CurrentVersion=%q, Restarted=%t, Updated=%t",
-			cfg.StartCounter, cfg.PreUpdateVersion, a.Version, restarted, updated)
+			cfg.StartCounter, cfg.PreUpdateVersion, a.BuildInfo().Version, restarted, updated)
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]bool{"restarted": restarted, "updated": updated}); err != nil {

@@ -90,14 +90,135 @@ Each Sprout instance writes its PID to a runtime directory. The installer uses t
 > **Advanced Integration**
 > If you have external non-Sprout processes accessing the database, you must replicate the migration guard logic found in `mguard.go`. Additionally, you'll need to modify the install script to account for these external processes during the shutdown phase of an update. As is, it's very conservative/safe and will only shut down Sprout processes, when looping over all the PIDs in the runtime directory.
 
-## Directory Structure
+## Code Structure
 
--   `cmd/`: Main entry points (e.g., `cmd/sprout/main.go`).
--   `internal/`: Private application and platform code.
-    -   `app/`: Business logic, commands, and the `App` container.
-    -   `platform/`: Low-level infrastructure (Database, HTTP, Git, System).
--   `pkg/`: Publicly reusable libraries (e.g., `migrator`, `x` utilities).
--   `scripts/`: Build, install, and maintenance scripts.
+This section provides a detailed breakdown of the codebase to help you navigate and extend the project.
+
+### Directory Layout
+
+```
+sprout/
+├── cmd/                           # Entry points
+│   └── main.go                    # CLI bootstrap, command registration
+│
+├── internal/                      # Private application code (not importable externally)
+│   ├── app/                       # Core application logic
+│   │   ├── app.go                 # App struct (DI container), Init() lifecycle
+│   │   ├── commands/              # CLI subcommands
+│   │   │   ├── command.go         # Command registry pattern
+│   │   │   ├── service.go         # `service run` - starts the HTTP daemon
+│   │   │   ├── update.go          # `update` - manual update trigger
+│   │   │   └── uninstall.go       # `uninstall` - cleanup & removal
+│   │   ├── mguard.go              # Migration guard (PID-based synchronization)
+│   │   └── update.go              # Auto-update logic, deferred/detached updates
+│   │
+│   ├── build/                     # Build-time information
+│   │   └── build.go               # BuildInfo struct, ldflags injection point
+│   │
+│   ├── platform/                  # Infrastructure / "platform" layer
+│   │   ├── database/              # LMDB wrapper and data access
+│   │   │   ├── database.go        # DB initialization, DBI registry
+│   │   │   ├── helpers.go         # Generic CRUD helpers (View, Put, Update, etc.)
+│   │   │   ├── migration.go       # Schema migrations using pkg/migrator
+│   │   │   └── config/            # Config-specific accessors
+│   │   │       └── config.go      # View(), Update() for Configuration struct
+│   │   │
+│   │   ├── http/                  # HTTP server and routing
+│   │   │   ├── router/            # Route definitions
+│   │   │   │   ├── router.go      # Main router setup, middleware
+│   │   │   │   └── settings/      # Settings page handlers
+│   │   │   │       └── settings.go
+│   │   │   └── server/            # Server lifecycle
+│   │   │       └── server.go      # Wraps xhttp.Server
+│   │   │
+│   │   └── release/               # Update source abstraction
+│   │       └── release.go         # ReleaseSource interface, version fetching
+│   │
+│   ├── types/                     # Shared domain types
+│   │   └── types.go               # Configuration struct, defaults
+│   │
+│   └── ui/                        # Frontend assets
+│       ├── ui.go                  # Template loading, asset serving
+│       ├── assets/                # Static files (bundled via embed)
+│       │   ├── css/               # Stylesheets
+│       │   └── js/                # JavaScript modules
+│       └── templates/             # HTML templates
+│           └── settings.html
+│
+├── pkg/                           # Reusable libraries (importable by external projects)
+│   ├── asset/                     # Versioned asset serving with cache busting
+│   │   └── asset.go
+│   ├── migrator/                  # Generic DB migration runner
+│   │   └── migrator.go
+│   ├── sdnotify/                  # systemd notification helper
+│   │   └── sdnotify.go
+│   └── x/                         # Utility functions
+│       ├── paths.go               # Home directory, path helpers
+│       └── x.go                   # Ternary, misc utils
+│
+├── scripts/                       # Build & deployment scripts
+│   ├── build.sh                   # Main build script (ldflags, config)
+│   ├── install.sh                 # Linux install/update script
+│   └── install.ps1                # Windows/WSL PowerShell bridge
+│
+└── docs/                          # Documentation
+    ├── ARCHITECTURE.md            # You are here
+    ├── DEVELOPMENT.md             # Setup guide, CI/CD, runner config
+    └── INSTALLATION.md            # End-user install template
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `cmd/main.go` | Entry point. Creates `App`, registers commands, runs CLI. |
+| `internal/app/app.go` | The **heart** of the application. Holds all injected dependencies (`DB`, `Log`, `Server`, etc.) and manages lifecycle via cleanup stack. |
+| `internal/app/commands/command.go` | Command registry pattern — add new CLI commands here. |
+| `internal/app/update.go` | Self-update logic: auto-checker goroutine, `DeferUpdate()`, `DetachUpdate()`. |
+| `internal/app/mguard.go` | Migration guard. Ensures only one instance runs migrations using PID files. |
+| `internal/build/build.go` | Build info struct populated via `-ldflags` at compile time. |
+| `internal/platform/database/database.go` | LMDB setup. Register new DBIs here. |
+| `internal/platform/database/helpers.go` | Generic typed helpers for DB operations (`View`, `Put`, `Update`, `ForEach`). |
+| `internal/platform/database/migration.go` | Define schema migrations using `pkg/migrator`. |
+| `internal/platform/http/router/router.go` | HTTP router setup. Mount new route groups here. |
+| `internal/types/types.go` | Shared configuration struct and defaults. |
+| `scripts/build.sh` | Build script. App name, release URL, service settings all live here. |
+
+### Adding New Features
+
+#### New CLI Command
+wip
+
+#### New HTTP Route
+1. Create a new package under `internal/platform/http/router/myroute/`
+2. Define `Register(a *app.App, r chi.Router)` 
+3. Mount in `internal/platform/http/router/router.go`:
+   ```go
+   myroute.Register(a, r)
+   ```
+
+#### New Database Bucket (DBI)
+1. Register in `internal/platform/database/database.go`:
+   ```go
+   var (
+       ConfigDBI = register("config")
+       MyNewDBI  = register("mynew") // add here
+   )
+   ```
+2. Create accessor package `internal/platform/database/mynew/mynew.go` (optional but recommended)
+3. Use helpers from `helpers.go` for type-safe operations
+
+#### New Database Migration
+1. Add to `internal/platform/database/migration.go`:
+   ```go
+   m.Add("v2", "add new field to config", func(txn *lmdb.Txn) error {
+       // migration logic
+       return nil
+   })
+   ```
+
+#### New Frontend Assets
+wip
 
 ## Security
 

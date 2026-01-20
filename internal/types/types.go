@@ -1,11 +1,9 @@
 package types
 
 import (
+	"sprout/internal/build"
 	"time"
 )
-
-// DefaultPort is the default HTTP port for the application.
-const DefaultPort = 8383
 
 type Configuration struct {
 	LogLevel  string `json:"logLevel"`
@@ -25,8 +23,8 @@ type Configuration struct {
 
 func DefaultConfig() Configuration {
 	return Configuration{
-		LogLevel:            "WARN",
-		Port:                DefaultPort,
+		LogLevel:            build.Info().DefaultLogLevel,
+		Port:                build.Info().ServiceDefaultPort,
 		Host:                "localhost",
 		UpdateNotifications: true,
 		LastUpdateCheck:     time.Time{},
