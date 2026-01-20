@@ -49,7 +49,7 @@ Ensure you have the following installed:
 - [rclone](https://rclone.org/downloads/) (rclone uses sudo for its install script, not sure why)
 - `systemd` (should already be installed on most distros)
 
-I recommend using user systemd over system systemd. It's easier and more secure. Although you need to enable lingering for the user that you do all this on, otherwise if you restart but don't login, the runner won't start. That's an issue for a server you don't want to be logged into all the time. Easy fix.
+I recommend using user scoped systemd. It's easier and more secure. Although you need to enable lingering for the user that you do all this on, otherwise if you restart but don't login, the runner won't start. That's an issue for a server you don't want to be logged into all the time. Easy fix.
 ```sh
 sudo loginctl enable-linger $USER
 ```
@@ -73,23 +73,51 @@ chmod +x ~/.local/bin/forgejo-runner
 ~/.local/bin/forgejo-runner --version
 ```
 
-Enable rootless Podman socket
+Create a config for the runner. If you plan on setting up multiple runners, from here on you'll need to copy the steps for each one. They'll all share the same binary but have their own homes, configs, tokens, and services. For this example, we'll do an 'org' and 'personal' runner, they'll have access to all of the repos in the account or org they're under.
+
+Create runner homes
 ```sh
-systemctl --user enable --now podman.socket
+mkdir -p ~/.forgejo-runner/personal ~/.forgejo-runner/org
+```
+
+Create runner configs (you may need to restart your shell first)
+```sh
+forgejo-runner generate-config > ~/.forgejo-runner/personal/config.yml
+forgejo-runner generate-config > ~/.forgejo-runner/org/config.yml
+```
+
+Edit these configs parts:
+
+`~/.forgejo-runner/personal/config.yml`
+```yaml
+runner:
+  capacity: 1
+  file: /home/YOU/.forgejo-runner/personal/.runner
+host:
+  workdir_parent: /home/YOU/.cache/forgejo-runner/personal
+```
+
+`~/.forgejo-runner/org/config.yml`
+```yaml
+runner:
+  capacity: 1
+  file: /home/YOU/.forgejo-runner/org/.runner
+host:
+  workdir_parent: /home/YOU/.cache/forgejo-runner/org
 ```
 
 Create runner token in Codeberg
 
-I recommend creating a runner in the account or org (if under one) owner settings, not the repo settings. This way it will be available to your / the org's other repos.
+I recommend creating a runner in the account or org(if under one) settings, not the repo settings. That way it will be available to your / the org's other repos.
 
 > [!IMPORTANT]
 > This shit is not containerized or secure. Do not run untrusted workflows on it OR workflows that invoke untrusted code. It's NOT a secure runner.
 
 Org/User → **Settings → Actions → Runners** → **Create new runner** → copy token.
 
-Register the runner
+Register the runner (using org as an example)
 ```sh
-~/.local/bin/forgejo-runner register
+forgejo-runner --config ~/.forgejo-runner/org/config.yml register
 ```
 
 Use:
@@ -99,20 +127,37 @@ Use:
   `<Distro>` being smth like `fedora-43`, `ubuntu-24`, etc  
   First `self-hosted:host` one is important, will bork otherwise.
 
-Create systemd user service
+Repeat token generation and registering for each runner.
 
-at `~/.config/systemd/user/forgejo-runner.service`
+Create systemd user services for each:
 
-write:
+`~/.config/systemd/user/forgejo-runner-personal.service`
 ```ini
 [Unit]
-Description=Forgejo Actions Runner
+Description=Forgejo Actions Runner (Personal)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Environment=DOCKER_HOST=unix://%t/podman/podman.sock
-ExecStart=%h/.local/bin/forgejo-runner daemon
+ExecStart=%h/.local/bin/forgejo-runner --config %h/.forgejo-runner/personal/config.yml daemon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+```
+
+`~/.config/systemd/user/forgejo-runner-org.service`
+```ini
+[Unit]
+Description=Forgejo Actions Runner (Org)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment=DOCKER_HOST=unix://%t/podman/podman.sock
+ExecStart=%h/.local/bin/forgejo-runner --config %h/.forgejo-runner/org/config.yml daemon
 Restart=always
 RestartSec=5
 
@@ -122,17 +167,18 @@ WantedBy=default.target
 
 enable and start
 ```sh
+systemctl --user enable --now podman.socket
 systemctl --user daemon-reload
-systemctl --user enable --now forgejo-runner
+systemctl --user enable --now forgejo-runner-personal forgejo-runner-org
 ```
 
-For reference, basic controls are:
+For reference, basic controls are (using org as an example):
 ```sh
-systemctl --user status forgejo-runner
-systemctl --user restart forgejo-runner
-systemctl --user stop forgejo-runner
-systemctl --user start forgejo-runner
-journalctl --user -u forgejo-runner -f
+systemctl --user status forgejo-runner-org
+systemctl --user restart forgejo-runner-org
+systemctl --user stop forgejo-runner-org
+systemctl --user start forgejo-runner-org
+journalctl --user -u forgejo-runner-org -f
 ```
 last one is for tailing logs, pretty handy.
 
