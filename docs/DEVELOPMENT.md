@@ -228,7 +228,7 @@ To see how the update process works, see the [settings page](../internal/platfor
 To test it:
 - publish a new release
 - run `YOUR_APP update --check` to force a check, otherwise it will wait and only check ~once a day.
-- visit/refresh `http://localhost:8383` in your browser.
+- visit/refresh `http://localhost:8484` in your browser.
 - you should see a notification about an update. Click **restart → enable update → confirm** and the app will update, just like magic ✨
 
 ## Release Host Migration
