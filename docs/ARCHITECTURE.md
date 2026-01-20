@@ -18,6 +18,7 @@ graph TD
     subgraph "User Space"
         CLI_1[CLI Instance 1]
         CLI_2[CLI Instance 2]
+        WebUI[Web UI / Browser]
     end
 
     subgraph "System Space"
@@ -34,6 +35,7 @@ graph TD
 
     CLI_1 -.->|Control| Daemon
     CLI_2 -.->|Control| Daemon
+    WebUI <-->|HTTP| Daemon
 ```
 
 ### Core Components

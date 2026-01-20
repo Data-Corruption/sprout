@@ -9,24 +9,21 @@ Replace `<YOUR_APP_NAME>` with the name of your app.
 
 ## Installation
 
-### Linux
+To install the latest version, run the following install command:
 
-To install the latest version, run the following command:
-
+**Linux**
 ```sh
 curl -fsSL <YOUR_RELEASE_URL>install.sh | sh
 ```
 
-### Windows (WSL)
-
-For Windows users running WSL, use PowerShell to bridge the environment:
-
+**Windows**
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex "& { $(irm <YOUR_RELEASE_URL>install.ps1) }"
 ```
 
 > [!IMPORTANT]
-> WSL can be a bit finicky. If you run into issues, try running `wsl --update` and after it completes, try running the install command again.
+> **Windows/WSL Support is Experimental.** 
+> The Windows installer uses WSL to run the application. While functional, it may be finicky on some systems. If you run into issues, try running `wsl --update` and then re-run the installer.
 
 ---
 

@@ -10,7 +10,7 @@
 
 Before diving into the code, check out [ARCHITECTURE.md](ARCHITECTURE.md) to understand the high-level design, core components, and data flow.
 
-This CI/CD pipeline is build on Forgejo Actions and Cloudflare R2. The Cloudflare R2 bucket is used to store the releases. That part can be swapped out with minimal changes to the build script which gets run by Forgejo Actions. As is, this is written for a self-hosted non-containerized runner with aggressive caching. I'll show how to set that up below
+This CI/CD pipeline is built on Forgejo Actions and Cloudflare R2. The Cloudflare R2 bucket is used to store the releases. That part can be swapped out with minimal changes to the build script which gets run by Forgejo Actions. As is, this is written for a self-hosted non-containerized runner with aggressive caching. I'll show how to set that up below
 
 ## Philosophy / Rant - Moving from GitHub to Codeberg  
 
@@ -270,7 +270,7 @@ This project uses a changelog-driven release process:
 2. Push your changes to the `main` branch.
 3. Forgejo Actions will automatically build the project and upload it to the release bucket. Users should see the update within a day or so.
 
-To see how the update process works, see the [settings page](../internal/platform/http/server/router/settings.go).  
+To see how the update process works, see the [settings page](../internal/platform/http/router/settings/settings.go).  
 To test it:
 - publish a new release
 - run `YOUR_APP update --check` to force a check, otherwise it will wait and only check ~once a day.
