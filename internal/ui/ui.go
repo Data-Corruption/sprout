@@ -67,19 +67,6 @@ type UI struct {
 
 // New parses all embedded templates and loads static assets from the manifest.
 func New() (*UI, error) {
-	// Parse templates with helper functions
-	funcMap := template.FuncMap{
-		"assetPath": func(relPath string) string {
-			// Placeholder - will be replaced after we build the asset map
-			return "/assets/" + relPath
-		},
-	}
-
-	t, err := template.New("").Funcs(funcMap).ParseFS(templateFS, "templates/*.html")
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse templates: %w", err)
-	}
-
 	// Load manifest
 	var manifest map[string]string // relPath -> hash
 	if err := json.Unmarshal(manifestData, &manifest); err != nil {
@@ -118,29 +105,29 @@ func New() (*UI, error) {
 		routeMap[urlPath] = asset
 	}
 
-	ui := &UI{
+	// assetPath helper for templates - must define before parsing
+	assetPath := func(relPath string) string {
+		if asset, ok := assets[relPath]; ok {
+			return asset.URLPath
+		}
+		return "/assets/" + relPath
+	}
+
+	// Parse templates with helper functions
+	t, err := template.New("").Funcs(template.FuncMap{
+		"assetPath": assetPath,
+	}).ParseFS(templateFS, "templates/*.html")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse templates: %w", err)
+	}
+
+	return &UI{
 		templates: t,
 		Assets:    assets,
 		routeMap:  routeMap,
 		CSS:       assets["css/output.css"],
 		JS:        assets["js/output.js"],
-	}
-
-	// Update template funcmap with real asset lookup
-	t.Funcs(template.FuncMap{
-		"assetPath": ui.AssetPath,
-	})
-
-	return ui, nil
-}
-
-// AssetPath returns the cache-busted URL path for an asset.
-// Returns the plain path if asset not found (for graceful degradation).
-func (ui *UI) AssetPath(relPath string) string {
-	if asset, ok := ui.Assets[relPath]; ok {
-		return asset.URLPath
-	}
-	return "/assets/" + relPath
+	}, nil
 }
 
 // Execute renders a template by name to the writer.

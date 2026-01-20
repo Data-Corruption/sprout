@@ -237,8 +237,12 @@ sprout/
 
 **Static files (images, fonts, etc.):**
 1. Add files to `internal/ui/assets/` (any subdirectory)
-2. In templates, access via `a.UI.Assets["path/to/file.png"].URLPath` for the cache busted URL
-3. Files are served at `/assets/*` with 1-year immutable cache headers
+2. Access the cache-busted URL one of two ways:
+   - **In handlers**: pass `a.UI.Assets["path/to/file.png"].URLPath` via template data
+   - **In templates**: use the `assetPath` function: `{{ assetPath "path/to/file.png" }}`
+
+> [!WARNING]
+> Some HTML formatters don't understand Go template syntax and may do stuff like inserting spaces inside `{{ }}` expressions, breaking them. Because of that, this repo disables format-on-save for HTML files in `.vscode/settings.json`.
 
 **Styling (TailwindCSS + DaisyUI):**
 1. Edit `internal/ui/assets/css/input.css` (Tailwind source)
