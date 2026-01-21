@@ -9,3 +9,5 @@ tailwindcss
 manifest.json
 
 bin/
+
+scripts/github-mirror.sh
