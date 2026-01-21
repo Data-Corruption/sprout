@@ -47,6 +47,15 @@ graph TD
     WebUI <-->|HTTP| Daemon
 ```
 
+### Philosophy
+
+*   **Complexity is the enemy.** If it's hard to understand, it will break, be hard to maintain, hard to debug, hard to update, etc.
+*   **Dependencies should earn their keep.** Every external package is a liability. I try to only use them when they solve a non-trivial problem.
+*   **Tackle the hard parts first.** Can't say this repo doesn't do that lmao.
+*   **Write for humans.** Code is read more than it's written. In 6 months, you'll be the uninformed reader of your own code. Be kind to future you.
+
+This repo delivers a full CLI/Daemon lifecycle in **under 3k** LOC with **only ~5** direct dependencies. The ones that usually require npm (tailwindcss, daisyui) are automatically installed via their standalone methods by the build script, **no npm required**. All your users need is Linux or Windows, and a 64 bit machine. You only also need Go for development.
+
 ## Platform Support
 
 | Platform | Status | Notes |

@@ -12,7 +12,7 @@ Before diving into the code, check out [ARCHITECTURE.md](ARCHITECTURE.md) to und
 
 This CI/CD pipeline is built on Forgejo Actions and Cloudflare R2. The Cloudflare R2 bucket is used to store the releases. That part can be swapped out with minimal changes to the build script which gets run by Forgejo Actions. As is, this is written for a self-hosted non-containerized runner with aggressive caching. I'll show how to set that up below
 
-## Philosophy / Rant - Moving from GitHub to Codeberg  
+## Personal Rant - Moving from GitHub to Codeberg  
 
 Incentives are everything... America is currently imploding due to unregulated capitalism and populist fascism. Cognitively dissonant rich assholes who got lucky at the casino are reaching grotesque immoral levels of fake monopoly wealth that will slowly poison the world until everything is dead.
 
@@ -23,7 +23,7 @@ The self host runner, aggressive caching, etc is to minimize the load (and cost 
 ## Steps
 
 ### 1. Use this Template  
-Click the "Use this template" button on Codeberg to create a new repository based on Sprout.
+Click the "Use this template" button on Codeberg to create a new repository based on Sprout. Or when making a new template, search for it in the template dropdown.
 
 ### 2. Enable Actions  
 In your new repository, go to **Settings** → **Units** → **Overview** and enable Actions.
