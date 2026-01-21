@@ -2,7 +2,7 @@
 
 *This file is a template. You should update it to provide instructions for **your** users once you have configured the project.*
 
-Replace `<YOUR_RELEASE_URL>` with the URL to your release tarball.  
+Replace `<YOUR_RELEASE_URL>` with the same URL you set in the build script.  
 Replace `<YOUR_APP_NAME>` with the name of your app.
 
 ---
